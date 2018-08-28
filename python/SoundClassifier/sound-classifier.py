@@ -62,7 +62,6 @@ app.debug       = True
 socketio        = SocketIO(app, async_mode='threading')
 socket_thread   = None
 
-
 # Functions
 #====================================================#
 def audio_callback(in_data, frame_count, time_info, flag):
@@ -129,7 +128,6 @@ def index():
         socket_thread.start()
     return render_template('index.html')
 
-
 @socketio.on('msgEvent', namespace='/socket')
 def test_message(message):
     msg = message['data']
@@ -167,8 +165,6 @@ def main_thread():
         global predict
         global result
         global train
-
-
 
         if train is True:
             model.fit(np.array(TRAINING_DATA),
