@@ -3,12 +3,10 @@ from modules import globals
 
 # Audio
 import pyaudio
-import matplotlib.pyplot as plt
 import librosa
-import librosa.display
+#import pygame
 import wave
 import time
-
 
 # Audio settings
 #====================================================#
@@ -18,12 +16,20 @@ CHANNELS            = 1
 RATE                = 44100
 WAVE_FILENAME       = 'temp.wav'
 RECORD_SECONDS      = 2
-#FRAMES_RANGE   = int(RATE / xCHUNK * RECORD_SECONDS)
 FRAMES_RANGE        = 32 # the same as Y-axe values for convinience
 SPECTOGRAM_FULL     = False
 RUNNING_SPECTOGRAM  = np.empty([1,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
 FRAME               = np.empty([CHUNK], dtype=np.int16) # frames to fill up spectogram
 PREVIOUS_SEC        = 0
+
+
+# start pygame for playing audio
+#pygame.init()
+#pygame.mixer.init()
+
+#load the sound file
+#wakeup = pygame.mixer.Sound("./data/okgoogle.wav")
+#noise = pygame.mixer.Sound("./data/noise.wav")
 
 def audio_callback(in_data, frame_count, time_info, flag):
     global FRAME
@@ -34,16 +40,16 @@ def audio_callback(in_data, frame_count, time_info, flag):
 
 def mic_thresh(volume):
     # Make threshold for microphone
-    global PREVIOUS_SEC 
+    global PREVIOUS_SEC
     current_sec = time.time() % 60
-    if(np.max(volume) > 2000):
+    if(np.max(volume) > 1000):
         PREVIOUS_SEC  = current_sec
-    if(current_sec - PREVIOUS_SEC  < 0.7):
-        globals.micOn = True;
+    if(current_sec - PREVIOUS_SEC  < 1.5):
+        globals.silence = True
     else:
-        globals.micOn = False
+        globals.silence = False
 
-def process_sound(): 
+def process_sound():
     # creates a temp wav file with a single frame
     waveFile = wave.open(WAVE_FILENAME, 'wb')
     waveFile.setnchannels(CHANNELS)
@@ -72,3 +78,15 @@ def make_spectrogram():
         RUNNING_SPECTOGRAM = np.delete(RUNNING_SPECTOGRAM,len(RUNNING_SPECTOGRAM)-1,axis = 0) #remove the oldes chunk
         SPECTOGRAM_FULL = True
     return RUNNING_SPECTOGRAM
+
+# def play_sound():
+#     # play wakup word
+#     wakeup.play()
+#     time.sleep(10)
+#     wakeup.stop()
+#
+# def play_noise():
+#     #play background noise
+#     noise.play()
+#     time.sleep(10)
+#     noise.stop()

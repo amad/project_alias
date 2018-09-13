@@ -1,7 +1,5 @@
 # coding=utf-8
-
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 from threading import Thread
 
@@ -42,7 +40,7 @@ def test_message(message):
             example = ai.prepare_data(sound.get_spectrogram())
             ai.addExample(example,0)
 
-        if('class1' in msg and globals.micOn):
+        if('class1' in msg and globals.silence):
             example = ai.prepare_data(sound.get_spectrogram())
             ai.addExample(example,1)
 
@@ -64,28 +62,27 @@ def main_thread():
     while stream.is_active():
 
         time.sleep(0.03)
-        print globals.micOn
-        if(globals.micOn): #when TRUE DO THE MAGIC 
-          sound.make_spectrogram();
+        if(globals.silence): #when TRUE DO THE MAGIC
+            sound.make_spectrogram();
         else:
-          globals.result = 0
+            globals.result = 0
 
         # print('------------------------------------')
         if TRAIN and sound.SPECTOGRAM_FULL:
-          #pause sound while traning
-          print('start training')
-          model.fit(np.array(ai.TRAINING_DATA),
-                    np.array(ai.TRAINING_LABELS),
-                    epochs=ai.EPOCHS,
-                    batch_size=ai.BATCH_SIZE)
-          TRAIN = False
-          PREDICT = True
+            #pause sound while traning
+            print('start training')
+            model.fit(np.array(ai.TRAINING_DATA),
+                np.array(ai.TRAINING_LABELS),
+                epochs=ai.EPOCHS,
+                batch_size=ai.BATCH_SIZE)
+            TRAIN = False
+            PREDICT = True
 
-        elif PREDICT and sound.SPECTOGRAM_FULL and globals.micOn:
-          sample = ai.prepare_data(sound.get_spectrogram())
-          sample_extended = np.expand_dims(sample, axis=0).astype('float32')
-          prediction = model.predict(sample_extended)
-          globals.result = np.argmax(prediction)
+        elif PREDICT and sound.SPECTOGRAM_FULL and globals.silence:
+            sample = ai.prepare_data(sound.get_spectrogram())
+            sample_extended = np.expand_dims(sample, axis=0).astype('float32')
+            prediction = model.predict(sample_extended)
+            globals.result = np.argmax(prediction)
 
 print "================================================================="
 
@@ -109,6 +106,7 @@ thread.start()
 
 # Start socket io
 if __name__ == '__main__':
+    print(connection.HOST,":", connection.PORT)
     connection.socketio.run(connection.app, host=connection.HOST, port=connection.PORT, debug=False, log_output=False)
 
 stream.close()

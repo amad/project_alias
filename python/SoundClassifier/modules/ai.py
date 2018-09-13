@@ -1,5 +1,4 @@
 import numpy as np
-from PIL import Image
 from modules import globals
 
 # Keras
@@ -8,7 +7,6 @@ from keras import backend as K
 from keras.layers.core import Dense
 from keras.optimizers import Adam
 from keras.metrics import categorical_crossentropy
-from keras.preprocessing import image
 from keras.models import Model
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten, Input, Dropout
@@ -51,3 +49,9 @@ def create_model():
     model.add(Dropout(rate = 0.5))
     model.add(Dense(units = NUM_CLASSES, activation = 'softmax'))
     return model
+
+def save_model(model):
+    model.save('my_model.h5')
+
+def load_model():
+    return load_model('my_model.h5')
