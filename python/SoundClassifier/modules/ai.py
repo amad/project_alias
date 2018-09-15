@@ -10,25 +10,28 @@ from keras.metrics import categorical_crossentropy
 from keras.models import Model
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten, Input, Dropout
-from keras.layers.convolutional import Conv1D, Conv2D, MaxPooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D
 
 # Classifier settings
 #====================================================#
 NUM_CLASSES     = 2
 LEARNING_RATE   = 0.0001
 EPOCHS          = 10
-BATCH_SIZE      = 8 # or 16
+BATCH_SIZE      = 8
 DENSE_UNITS     = 128
 TRAINING_DATA   = [] # XS Example array to be trained
 TRAINING_LABELS = [] # YS Label array
 RESULT          = None
 
-def addExample(example, label):
+model = Sequential()
+
+def addExample(sample, label):
     # add examples to training dataset
+    sample = np.expand_dims(sample, axis=0)
     encoded_y = keras.utils.np_utils.to_categorical(label,num_classes=NUM_CLASSES) # make one-hot
     TRAINING_LABELS.append(encoded_y)
-    TRAINING_DATA.append(example)
-    globals.examples = len(TRAINING_DATA) # store amount of examples for client
+    TRAINING_DATA.append(sample)
+    globals.EXAMPLES = len(TRAINING_DATA) # store amount of examples for client
     print('add example for label %d'%label)
 
 def prepare_data(spectogram):
@@ -36,7 +39,7 @@ def prepare_data(spectogram):
     return spectogram_array_extended
 
 def create_model():
-    model = Sequential()
+    global model
     model.add(Conv2D(32, kernel_size = (3,3), input_shape = (1, 32, 32), data_format='channels_first'))
     model.add(MaxPooling2D(pool_size = (2, 2)))
     model.add(Conv2D(filters = 16, kernel_size = (3,3), activation = 'relu'))
@@ -48,10 +51,26 @@ def create_model():
     model.add(Dense(units = DENSE_UNITS, activation = 'relu'))
     model.add(Dropout(rate = 0.5))
     model.add(Dense(units = NUM_CLASSES, activation = 'softmax'))
-    return model
+    model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])
 
-def save_model(model):
-    model.save('my_model.h5')
+def train_model():
+    global model
+    model.fit(np.array(TRAINING_DATA),
+        np.array(TRAINING_LABELS),
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE)
+    #model.save('alias.h5')
+
+def predict(sample):
+    global model
+    sample = np.expand_dims(sample, axis=0)
+    sample_extended = np.expand_dims(sample, axis=0)
+    prediction = model.predict(sample_extended)
+    return np.argmax(prediction)
+
+def save_model():
+    global model
+    model.save('alias.h5')
 
 def load_model():
-    return load_model('my_model.h5')
+    return load_model('alias.h5')

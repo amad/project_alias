@@ -14,16 +14,10 @@ PREDICT = False
 
 # TO DO
 #====================================================#
-# - Make spectrogram have fine adjustment (tore)
-#       - fixed range fro voice freq
-# - Use globals.py for all global variables (bjørn)
 # - Test on rpi3 and others (bjørn + tore)
-# - Make a silence detection that -> do nut run librosa or keras while true - (tore) *****DONE*****
-# - Make code lighter for low cpu/memory boards (bjørn + tore)
-#       - test minimal audio preprocessing
-#       - test minimal keras settings
-#       -
+# - See what can make the code lighter
 # - create play audio module (voices and noise) - (bjørn)
+# - make logic so when predict changes it waits 2 secounds before predict again
 
 # Functions
 #====================================================#
@@ -34,14 +28,14 @@ def test_message(message):
     global PREDICT
 
     # make sure the spectogram is full before resiving commands
-    if (sound.SPECTOGRAM_FULL):
+    if (globals.SPECTOGRAM_FULL):
 
         if('class0' in msg):
-            example = ai.prepare_data(sound.get_spectrogram())
+            example = sound.get_spectrogram()
             ai.addExample(example,0)
 
-        if('class1' in msg and globals.silence):
-            example = ai.prepare_data(sound.get_spectrogram())
+        if('class1' in msg and globals.SILENCE):
+            example = sound.get_spectrogram()
             ai.addExample(example,1)
 
         if('train' in msg):
@@ -55,59 +49,64 @@ def main_thread():
     global RESULT
 
     # setup keras model
-    model = ai.create_model()
-    model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])
-    model.summary()
+    ai.create_model()
+
+    #noise = sound.audioPlayer("data/noise.wav");
+    #wakeup = sound.audioPlayer("data/noise.wav");
+
+    trigger = False
+    trigger_timer = False
 
     while stream.is_active():
-
         time.sleep(0.03)
-        if(globals.silence): #when TRUE DO THE MAGIC
+
+        if(globals.SILENCE): # when TRUE do the magic!
             sound.make_spectrogram();
         else:
-            globals.result = 0
+            globals.RESULT = 0
 
-        # print('------------------------------------')
-        if TRAIN and sound.SPECTOGRAM_FULL:
-            #pause sound while traning
-            print('start training')
-            model.fit(np.array(ai.TRAINING_DATA),
-                np.array(ai.TRAINING_LABELS),
-                epochs=ai.EPOCHS,
-                batch_size=ai.BATCH_SIZE)
+        if TRAIN and globals.SPECTOGRAM_FULL:
+            ai.train_model()
             TRAIN = False
             PREDICT = True
 
-        elif PREDICT and sound.SPECTOGRAM_FULL and globals.silence:
-            sample = ai.prepare_data(sound.get_spectrogram())
-            sample_extended = np.expand_dims(sample, axis=0).astype('float32')
-            prediction = model.predict(sample_extended)
-            globals.result = np.argmax(prediction)
+        elif PREDICT and globals.SPECTOGRAM_FULL and globals.SILENCE:
+            sample = sound.get_spectrogram()
+            globals.RESULT = ai.predict(sample)
 
-print "================================================================="
+            if(globals.RESULT == 0 and trigger == True):
+                #print('stop wakeup')
+                print('play noise')
+                trigger = False
+            elif(globals.RESULT == 1 and trigger == False):
+                #print('stop noise')
+                print('play wakeup')
+                trigger_timer = True
+
+        if trigger_timer:
+            print('start timer here')
+        #start timer here and set trigger to true
+
+print('')
+print "============================================"
 
 globals.initialize()
-# Start audio stream
-stream = sound.pyaudio.PyAudio().open(format=sound.FORMAT,
-                 channels=sound.CHANNELS,
-                 rate=sound.RATE,
-                 output=False,
-                 input=True,
-                 stream_callback=sound.audio_callback)
-
+stream = sound.initialize()
 stream.start_stream() # start stream
-
-print "================================================================="
 
 # Setup and start main thread
 thread = Thread(target=main_thread)
 thread.daemon = True
 thread.start()
 
+print("SERVER RUNNING ON: http://" + str(connection.HOST) + ":" + str(connection.PORT))
+print "============================================"
+print('')
+
 # Start socket io
 if __name__ == '__main__':
-    print(connection.HOST,":", connection.PORT)
     connection.socketio.run(connection.app, host=connection.HOST, port=connection.PORT, debug=False, log_output=False)
 
+player.stop()
 stream.close()
 sound.pyaudio.terminate()

@@ -2,34 +2,31 @@ import numpy as np
 from modules import globals
 
 # Audio
+import os
 import pyaudio
 import librosa
-#import pygame
 import wave
 import time
+import threading
 
 # Audio settings
 #====================================================#
 CHUNK               = 1024
-FORMAT              = pyaudio.paInt16 #paFloat32
+FORMAT              = pyaudio.paInt16
 CHANNELS            = 1
 RATE                = 44100
-WAVE_FILENAME       = 'temp.wav'
 RECORD_SECONDS      = 2
 FRAMES_RANGE        = 32 # the same as Y-axe values for convinience
-SPECTOGRAM_FULL     = False
 RUNNING_SPECTOGRAM  = np.empty([1,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
 FRAME               = np.empty([CHUNK], dtype=np.int16) # frames to fill up spectogram
-PREVIOUS_SEC        = 0
 
-
-# start pygame for playing audio
-#pygame.init()
-#pygame.mixer.init()
-
-#load the sound file
-#wakeup = pygame.mixer.Sound("./data/okgoogle.wav")
-#noise = pygame.mixer.Sound("./data/noise.wav")
+def initialize():
+    return pyaudio.PyAudio().open(format=FORMAT,
+                     channels=CHANNELS,
+                     rate=RATE,
+                     output=False,
+                     input=True,
+                     stream_callback=audio_callback)
 
 def audio_callback(in_data, frame_count, time_info, flag):
     global FRAME
@@ -38,20 +35,21 @@ def audio_callback(in_data, frame_count, time_info, flag):
     FRAME = audio_data #store the new chunk in global array.
     return None, pyaudio.paContinue
 
+prev_sec = 0
 def mic_thresh(volume):
     # Make threshold for microphone
-    global PREVIOUS_SEC
+    global prev_sec
     current_sec = time.time() % 60
     if(np.max(volume) > 1000):
-        PREVIOUS_SEC  = current_sec
-    if(current_sec - PREVIOUS_SEC  < 1.5):
-        globals.silence = True
+        prev_sec  = current_sec
+    if(current_sec - prev_sec  < 1.5):
+        globals.SILENCE = True
     else:
-        globals.silence = False
+        globals.SILENCE = False
 
 def process_sound():
     # creates a temp wav file with a single frame
-    waveFile = wave.open(WAVE_FILENAME, 'wb')
+    waveFile = wave.open('data/temp.wav', 'wb')
     waveFile.setnchannels(CHANNELS)
     waveFile.setsampwidth(pyaudio.get_sample_size(FORMAT))
     waveFile.setframerate(RATE)
@@ -59,7 +57,7 @@ def process_sound():
     waveFile.close()
 
     # load wav file into librosa
-    y, sr = librosa.load(WAVE_FILENAME)
+    y, sr = librosa.load('data/temp.wav')
     S = librosa.feature.melspectrogram(y, sr=sr, power=2, fmax=8000, n_mels=FRAMES_RANGE)
     NEW_CHUNK = librosa.power_to_db(S, ref=np.max) #Store procced sound chunk
     return NEW_CHUNK
@@ -70,23 +68,48 @@ def get_spectrogram():
 
 def make_spectrogram():
     global RUNNING_SPECTOGRAM
-    global SPECTOGRAM_FULL
-
     y_chunk_shaped = np.reshape(process_sound(),(1, FRAMES_RANGE)) #Reshape array structore to fit the final spectogram array
     RUNNING_SPECTOGRAM = np.vstack([y_chunk_shaped,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
     if(len(RUNNING_SPECTOGRAM) > FRAMES_RANGE): #see if array is full
         RUNNING_SPECTOGRAM = np.delete(RUNNING_SPECTOGRAM,len(RUNNING_SPECTOGRAM)-1,axis = 0) #remove the oldes chunk
-        SPECTOGRAM_FULL = True
-    return RUNNING_SPECTOGRAM
+        globals.SPECTOGRAM_FULL = True
 
-# def play_sound():
-#     # play wakup word
-#     wakeup.play()
-#     time.sleep(10)
-#     wakeup.stop()
-#
-# def play_noise():
-#     #play background noise
-#     noise.play()
-#     time.sleep(10)
-#     noise.stop()
+# Audio player
+#====================================================#
+
+class audioPlayer(threading.Thread) :
+  CHUNK = 1024
+
+  def __init__(self,filepath,loop=True) :
+    super(audioPlayer, self).__init__()
+    self.filepath = os.path.abspath(filepath)
+    self.loop = loop
+
+  def run(self):
+    # Open Wave File and start play!
+    wf = wave.open(self.filepath, 'rb')
+    player = pyaudio.PyAudio()
+
+    # Open Output Stream (basen on PyAudio tutorial)
+    stream = player.open(format = player.get_format_from_width(wf.getsampwidth()),
+        channels = wf.getnchannels(),
+        rate = wf.getframerate(),
+        output = True)
+
+    # PLAYBACK LOOP
+    data = wf.readframes(self.CHUNK)
+    while self.loop :
+      stream.write(data)
+      data = wf.readframes(self.CHUNK)
+      if data == '' : # If file is over then rewind.
+        wf.rewind()
+        data = wf.readframes(self.CHUNK)
+
+    stream.close()
+    player.terminate()
+
+  def play(self) :
+    self.start()
+
+  def stop(self) :
+    self.loop = False

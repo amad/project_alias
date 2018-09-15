@@ -1,8 +1,9 @@
 def initialize():
-    global result, examples, train, predict, silence
+    global RESULT, EXAMPLES, TRAIN, PREDICT, SILENCE, SPECTOGRAM_FULL
 
-    train       = False
-    predict     = False
-    result      = 3
-    examples    = 0
-    silence		= False
+    TRAIN       = False
+    PREDICT     = False
+    RESULT      = 3
+    EXAMPLES    = 0
+    SILENCE		= False
+    SPECTOGRAM_FULL = False
