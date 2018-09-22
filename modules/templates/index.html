@@ -14,12 +14,24 @@
   <br>
   <span>Prediction: </span><span id="result"></span>
   <br>
-  <span>Examples: </span><span id="examples"></span>
+  <span>Background Examples: </span><span id="bg_examples"></span>
+  <br>
+  <span>Trigger Examples: </span><span id="tr_examples"></span>
   <br>
   <canvas id="canvas" width="256" height="256"> spectogram </canvas>
 
+  <div class="slidecontainer">
+   <input type="range" min="0.0" max="10.0" value="2.0" step="0.1" class="slider" id="myRange">
+</div>
+
   <!-- Javascript -->
   <script type="text/javascript" charset="utf-8">
+    var normalizer = 2;
+    var slider = document.getElementById("myRange");
+    slider.oninput = function() {
+      normalizer = this.value;
+      console.log(normalizer);
+    }
     $(document).ready(function(){
       var socket = io.connect('http://' + document.domain + ':' + location.port + '/socket');
 
@@ -29,10 +41,11 @@
         var spectogram = $.parseJSON(msg.spectogram);
         drawSpectogram(spectogram);
         $('#result').text(msg.result);
-        $('#examples').text(msg.examples);
+        $('#bg_examples').text(msg.bg_examples);
+        $('#tr_examples').text(msg.tr_examples);
       });
 
-      var timeOut; 
+      var timeOut;
       // Toggle mechanic
       $(".toggle").mousedown(function(){
         var msg = $(this).attr('id');
@@ -49,7 +62,9 @@
       $("#train").mousedown(function(){
         socket.emit('msgEvent',{data:"train"});
       })
- 
+
+
+
     });
 
     /////////////////////////////////////////////////////
@@ -57,25 +72,18 @@
     var canvas = document.getElementById('canvas');
     var ctx = canvas.getContext("2d");
 
-    var resolution = 32;
+    var resolution = 40;
     var xRes = canvas.width / resolution;
     var yRes = canvas.height / resolution;
 
     function drawSpectogram(data){
-      //console.log("data: " + data)
       //Draw the spectrogram
       for (var x = 0; x < data.length-1; x++) {
         for (var y = data[0].length-1; y > 0; y--) {
 
           var value = Math.floor(data[x][y]);
           var hue = 140 //+(Math.abs(value)/6);
-          var bri = mapRange(value,-80,0,0,100)
-
-           if(value>80){
-              ctx.fillStyle = 'hsl(0,100%,100%)';
-          }else{
-              ctx.fillStyle = 'hsl('+ hue +',100%,'+bri+'%)';
-          }
+          var bri = value / normalizer;
           ctx.fillStyle = 'hsl('+ hue +',100%,'+bri+'%)';
           ctx.fillRect(xRes * x, yRes * y, xRes, yRes);
         }

@@ -28,10 +28,10 @@ model = Sequential()
 def addExample(sample, label):
     # add examples to training dataset
     sample = np.expand_dims(sample, axis=0)
+    print sample.shape
     encoded_y = keras.utils.np_utils.to_categorical(label,num_classes=NUM_CLASSES) # make one-hot
     TRAINING_LABELS.append(encoded_y)
     TRAINING_DATA.append(sample)
-    globals.EXAMPLES = len(TRAINING_DATA) # store amount of examples for client
     print('add example for label %d'%label)
 
 def prepare_data(spectogram):
@@ -40,7 +40,7 @@ def prepare_data(spectogram):
 
 def create_model():
     global model
-    model.add(Conv2D(32, kernel_size = (3,3), input_shape = (1, 32, 32), data_format='channels_first'))
+    model.add(Conv2D(32, kernel_size = (3,3), input_shape = (1, 25, 25), data_format='channels_first'))
     model.add(MaxPooling2D(pool_size = (2, 2)))
     model.add(Conv2D(filters = 16, kernel_size = (3,3), activation = 'relu'))
     model.add(MaxPooling2D(pool_size = (2, 2)))

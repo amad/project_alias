@@ -29,15 +29,15 @@ def test_message(message):
 
     # make sure the spectogram is full before resiving commands
     if (globals.SPECTOGRAM_FULL):
-
+        PREDICT = False
         if('class0' in msg):
             example = sound.get_spectrogram()
             ai.addExample(example,0)
-
+            globals.BG_EXAMPLES += 1
         if('class1' in msg and globals.SILENCE):
             example = sound.get_spectrogram()
             ai.addExample(example,1)
-
+            globals.TR_EXAMPLES += 1
         if('train' in msg):
             PREDICT = False
             TRAIN = True
@@ -56,9 +56,13 @@ def main_thread():
 
     trigger = False
     trigger_timer = False
+    prev_timer = 0;
+    interval = 1;
+
 
     while stream.is_active():
-        time.sleep(0.03)
+        time.sleep(0.04)
+        current_sec = time.time() % 60
 
         if(globals.SILENCE): # when TRUE do the magic!
             sound.make_spectrogram();
@@ -74,18 +78,23 @@ def main_thread():
             sample = sound.get_spectrogram()
             globals.RESULT = ai.predict(sample)
 
-            if(globals.RESULT == 0 and trigger == True):
-                #print('stop wakeup')
-                print('play noise')
-                trigger = False
-            elif(globals.RESULT == 1 and trigger == False):
-                #print('stop noise')
-                print('play wakeup')
+            if(globals.RESULT == 0 and trigger == False):
+                trigger = True
+            elif(globals.RESULT == 1 and trigger == True):
+                print("stop noise")
+                print("play wakeword")
+                prev_timer = current_sec
                 trigger_timer = True
+                trigger = False
 
-        if trigger_timer:
-            print('start timer here')
-        #start timer here and set trigger to true
+        if(trigger_timer):
+            if(current_sec - prev_timer < 3):
+                PREDICT = False
+            else:
+                print("stop wakeword")
+                print("srart noise")
+                trigger_timer = False
+                PREDICT = True
 
 print('')
 print "============================================"

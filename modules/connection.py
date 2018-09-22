@@ -12,7 +12,7 @@ import logging
 
 # Socket I/O
 #====================================================#
-PORT            = 5000
+PORT            = 5050
 HOST            = '0.0.0.0'
 app             = Flask(__name__)
 app.debug       = False
@@ -24,13 +24,14 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR) # remove socket io logs
 # this thread is running in the background sending data to the client when connected
 def response_thread():
      while True:
-         if globals.SPECTOGRAM_FULL:
-             socketio.sleep(0.03) #speed of data transmit
-             spec_as_list = sound.get_spectrogram().tolist() # convert from numpy to regular list
-             spec_to_server = json.dumps(spec_as_list, indent=4) # convert list to json format
-             socketio.emit('response', {'spectogram': spec_to_server,
-                                        'result': globals.RESULT,
-                                        'examples': globals.EXAMPLES}, namespace='/socket')
+         #if globals.SPECTOGRAM_FULL:
+        socketio.sleep(0.04) #speed of data transmit
+        spec_as_list = sound.get_spectrogram().tolist() # convert from numpy to regular list
+        spec_to_server = json.dumps(spec_as_list, indent=4) # convert list to json format
+        socketio.emit('response', {'spectogram': spec_to_server,
+                                    'result': globals.RESULT,
+                                    'bg_examples': globals.BG_EXAMPLES,
+                                    'tr_examples': globals.TR_EXAMPLES},namespace='/socket')
 
 @app.route('/')
 def index():

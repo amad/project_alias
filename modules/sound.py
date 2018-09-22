@@ -1,13 +1,7 @@
 import numpy as np
 from modules import globals
-
-# Audio
-import os
 import pyaudio
-import librosa
-import wave
 import time
-import threading
 
 # Audio settings
 #====================================================#
@@ -16,7 +10,7 @@ FORMAT              = pyaudio.paInt16
 CHANNELS            = 1
 RATE                = 44100
 RECORD_SECONDS      = 2
-FRAMES_RANGE        = 32 # the same as Y-axe values for convinience
+FRAMES_RANGE        = 25 # the same as Y-axe values for convinience
 RUNNING_SPECTOGRAM  = np.empty([1,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
 FRAME               = np.empty([CHUNK], dtype=np.int16) # frames to fill up spectogram
 
@@ -42,74 +36,51 @@ def mic_thresh(volume):
     current_sec = time.time() % 60
     if(np.max(volume) > 1000):
         prev_sec  = current_sec
-    if(current_sec - prev_sec  < 1.5):
+    if(current_sec - prev_sec < 1.2):
         globals.SILENCE = True
     else:
         globals.SILENCE = False
 
-def process_sound():
-    # creates a temp wav file with a single frame
-    waveFile = wave.open('data/temp.wav', 'wb')
-    waveFile.setnchannels(CHANNELS)
-    waveFile.setsampwidth(pyaudio.get_sample_size(FORMAT))
-    waveFile.setframerate(RATE)
-    waveFile.writeframes(FRAME)
-    waveFile.close()
+pre_emphasis = 0.97
+NFFT = 512
+nfilt = FRAMES_RANGE
 
-    # load wav file into librosa
-    y, sr = librosa.load('data/temp.wav')
-    S = librosa.feature.melspectrogram(y, sr=sr, power=2, fmax=8000, n_mels=FRAMES_RANGE)
-    NEW_CHUNK = librosa.power_to_db(S, ref=np.max) #Store procced sound chunk
-    return NEW_CHUNK
+def create_mfcc(data):
+    #frames = np.append(data[0],data[1:]-0.97 * data[:-1])
+    frames = data*np.hamming(len(data))
+    mag_frames = np.absolute(np.fft.rfft(frames, NFFT))  # Magnitude of the FFT
+    pow_frames = ((1.0 / NFFT) * ((mag_frames) ** 2))  # Power Spectrum
+    low_freq_mel = 0
+    high_freq_mel = (8000 * np.log10(1 + (RATE / 2) / 700))  # Convert Hz to Mel
+    mel_points = np.linspace(low_freq_mel, high_freq_mel, nfilt + 2)  # Equally spaced in Mel scale
+    hz_points = (700 * (10**(mel_points / 8000) - 1))  # Convert Mel to Hz
+    bin = np.floor((NFFT + 1) * hz_points / RATE)
+
+    fbank = np.zeros((nfilt, int(np.floor(NFFT / 2 + 1))))
+    for m in range(1, nfilt + 1):
+        f_m_minus = int(bin[m - 1])   # left
+        f_m = int(bin[m])             # center
+        f_m_plus = int(bin[m + 1])    # right
+
+        for k in range(f_m_minus, f_m):
+            fbank[m - 1, k] = (k - bin[m - 1]) / (bin[m] - bin[m - 1])
+        for k in range(f_m, f_m_plus):
+            fbank[m - 1, k] = (bin[m + 1] - k) / (bin[m + 1] - bin[m])
+    filter_banks = np.dot(pow_frames, fbank.T)
+    filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Numerical Stability
+    filter_banks = 20 * np.log10(filter_banks)  # dB
+    filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
+    return filter_banks
+
+def make_spectrogram():
+    global RUNNING_SPECTOGRAM
+    new_array = (create_mfcc(FRAME));
+    RUNNING_SPECTOGRAM = np.vstack([new_array,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
+    if(len(RUNNING_SPECTOGRAM) > FRAMES_RANGE): #see if array is full
+        RUNNING_SPECTOGRAM = np.delete(RUNNING_SPECTOGRAM,len(RUNNING_SPECTOGRAM)-1,axis = 0) #remove the oldes chunk
+        globals.SPECTOGRAM_FULL = True
+    #print RUNNING_SPECTOGRAM.shape
 
 def get_spectrogram():
     global RUNNING_SPECTOGRAM
     return RUNNING_SPECTOGRAM
-
-def make_spectrogram():
-    global RUNNING_SPECTOGRAM
-    y_chunk_shaped = np.reshape(process_sound(),(1, FRAMES_RANGE)) #Reshape array structore to fit the final spectogram array
-    RUNNING_SPECTOGRAM = np.vstack([y_chunk_shaped,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
-    if(len(RUNNING_SPECTOGRAM) > FRAMES_RANGE): #see if array is full
-        RUNNING_SPECTOGRAM = np.delete(RUNNING_SPECTOGRAM,len(RUNNING_SPECTOGRAM)-1,axis = 0) #remove the oldes chunk
-        globals.SPECTOGRAM_FULL = True
-
-# Audio player
-#====================================================#
-
-class audioPlayer(threading.Thread) :
-  CHUNK = 1024
-
-  def __init__(self,filepath,loop=True) :
-    super(audioPlayer, self).__init__()
-    self.filepath = os.path.abspath(filepath)
-    self.loop = loop
-
-  def run(self):
-    # Open Wave File and start play!
-    wf = wave.open(self.filepath, 'rb')
-    player = pyaudio.PyAudio()
-
-    # Open Output Stream (basen on PyAudio tutorial)
-    stream = player.open(format = player.get_format_from_width(wf.getsampwidth()),
-        channels = wf.getnchannels(),
-        rate = wf.getframerate(),
-        output = True)
-
-    # PLAYBACK LOOP
-    data = wf.readframes(self.CHUNK)
-    while self.loop :
-      stream.write(data)
-      data = wf.readframes(self.CHUNK)
-      if data == '' : # If file is over then rewind.
-        wf.rewind()
-        data = wf.readframes(self.CHUNK)
-
-    stream.close()
-    player.terminate()
-
-  def play(self) :
-    self.start()
-
-  def stop(self) :
-    self.loop = False
