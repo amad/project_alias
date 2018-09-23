@@ -97,7 +97,7 @@ def main_thread():
                 PREDICT = True
 
 print('')
-print "============================================"
+print("============================================")
 
 globals.initialize()
 stream = sound.initialize()
@@ -109,13 +109,12 @@ thread.daemon = True
 thread.start()
 
 print("SERVER RUNNING ON: http://" + str(connection.HOST) + ":" + str(connection.PORT))
-print "============================================"
+print("============================================")
 print('')
 
 # Start socket io
 if __name__ == '__main__':
     connection.socketio.run(connection.app, host=connection.HOST, port=connection.PORT, debug=False, log_output=False)
 
-player.stop()
 stream.close()
 sound.pyaudio.terminate()

@@ -28,7 +28,7 @@ model = Sequential()
 def addExample(sample, label):
     # add examples to training dataset
     sample = np.expand_dims(sample, axis=0)
-    print sample.shape
+    print(sample.shape)
     encoded_y = keras.utils.np_utils.to_categorical(label,num_classes=NUM_CLASSES) # make one-hot
     TRAINING_LABELS.append(encoded_y)
     TRAINING_DATA.append(sample)

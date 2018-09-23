@@ -8,7 +8,7 @@ import time
 CHUNK               = 1024
 FORMAT              = pyaudio.paInt16
 CHANNELS            = 1
-RATE                = 44100
+RATE                = 16000
 RECORD_SECONDS      = 2
 FRAMES_RANGE        = 25 # the same as Y-axe values for convinience
 RUNNING_SPECTOGRAM  = np.empty([1,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
