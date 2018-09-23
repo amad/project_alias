@@ -8,9 +8,11 @@ from modules import globals
 from modules import connection
 from modules import sound
 from modules import ai
+from modules import led
 
 TRAIN   = False
 PREDICT = False
+
 
 # TO DO
 #====================================================#
@@ -50,7 +52,7 @@ def main_thread():
 
     # setup keras model
     ai.create_model()
-
+    pixels = led.Pixels()
     #noise = sound.audioPlayer("data/noise.wav");
     #wakeup = sound.audioPlayer("data/noise.wav");
 
@@ -83,6 +85,7 @@ def main_thread():
             elif(globals.RESULT == 1 and trigger == True):
                 print("stop noise")
                 print("play wakeword")
+                pixels.on()
                 prev_timer = current_sec
                 trigger_timer = True
                 trigger = False
@@ -93,6 +96,7 @@ def main_thread():
             else:
                 print("stop wakeword")
                 print("srart noise")
+                pixels.off()
                 trigger_timer = False
                 PREDICT = True
 
