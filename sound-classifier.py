@@ -13,6 +13,8 @@ from modules import led
 TRAIN   = False
 PREDICT = False
 
+LED = led.Pixels()
+LED.off()
 
 # TO DO
 #====================================================#
@@ -36,11 +38,13 @@ def test_message(message):
             example = sound.get_spectrogram()
             ai.addExample(example,0)
             globals.BG_EXAMPLES += 1
-        if('class1' in msg and globals.SILENCE):
+            LED.listen()
+        elif('class1' in msg and globals.SILENCE):
             example = sound.get_spectrogram()
             ai.addExample(example,1)
             globals.TR_EXAMPLES += 1
-        if('train' in msg):
+            LED.listen()
+        elif('train' in msg):
             PREDICT = False
             TRAIN = True
 
@@ -52,7 +56,7 @@ def main_thread():
 
     # setup keras model
     ai.create_model()
-    pixels = led.Pixels()
+
     #noise = sound.audioPlayer("data/noise.wav");
     #wakeup = sound.audioPlayer("data/noise.wav");
 
@@ -63,7 +67,8 @@ def main_thread():
 
 
     while stream.is_active():
-        time.sleep(0.04)
+        time.sleep(0.02)
+        LED.off()
         current_sec = time.time() % 60
 
         if(globals.SILENCE): # when TRUE do the magic!
@@ -85,7 +90,7 @@ def main_thread():
             elif(globals.RESULT == 1 and trigger == True):
                 print("stop noise")
                 print("play wakeword")
-                pixels.on()
+                LED.on()
                 prev_timer = current_sec
                 trigger_timer = True
                 trigger = False
@@ -96,12 +101,12 @@ def main_thread():
             else:
                 print("stop wakeword")
                 print("srart noise")
-                pixels.off()
+                LED.off()
                 trigger_timer = False
                 PREDICT = True
 
-print('')
-print("============================================")
+# Setup
+#====================================================#
 
 globals.initialize()
 stream = sound.initialize()
@@ -112,6 +117,8 @@ thread = Thread(target=main_thread)
 thread.daemon = True
 thread.start()
 
+print('')
+print("============================================")
 print("SERVER RUNNING ON: http://" + str(connection.HOST) + ":" + str(connection.PORT))
 print("============================================")
 print('')
@@ -120,5 +127,6 @@ print('')
 if __name__ == '__main__':
     connection.socketio.run(connection.app, host=connection.HOST, port=connection.PORT, debug=False, log_output=False)
 
+LED.off()
 stream.close()
 sound.pyaudio.terminate()
