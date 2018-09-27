@@ -12,6 +12,9 @@
   <br>
   <button id="train">train</button>
   <br>
+  <br>
+  <button id="reset">reset</button>
+  <br>
   <span>Prediction: </span><span id="result"></span>
   <br>
   <span>Background Examples: </span><span id="bg_examples"></span>
@@ -37,7 +40,7 @@
 
       // Get data from python
       socket.on('response', function(msg) {
-        //console.log(msg)
+        console.log(msg)
         var spectogram = $.parseJSON(msg.spectogram);
         drawSpectogram(spectogram);
         $('#result').text(msg.result);
@@ -62,6 +65,10 @@
       $("#train").mousedown(function(){
         socket.emit('msgEvent',{data:"train"});
       })
+      $("#reset").mousedown(function(){
+        socket.emit('msgEvent',{data:"reset"});
+      })
+
 
 
 

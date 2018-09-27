@@ -1,5 +1,5 @@
 def initialize():
-    global RESULT, BG_EXAMPLES, TR_EXAMPLES, TRAIN, PREDICT, SILENCE, SPECTOGRAM_FULL, SPECTOGRAM_FULL_FFT
+    global RESULT, BG_EXAMPLES, TR_EXAMPLES, TRAIN, PREDICT, SILENCE, SPECTOGRAM_FULL, MIC_TRIGGER, EXAMPLE_READY, UPDATE_BG_DATA
 
     TRAIN       = False
     PREDICT     = False
@@ -9,3 +9,6 @@ def initialize():
     SILENCE		= False
     SPECTOGRAM_FULL = False
     SPECTOGRAM_FULL_FFT = False
+    MIC_TRIGGER = False
+    EXAMPLE_READY = False
+    UPDATE_BG_DATA = False # Set true to record new examples to background data set 

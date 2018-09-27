@@ -16,12 +16,17 @@ PREDICT = False
 LED = led.Pixels()
 LED.off()
 
+#Initialize the sound objects 
+#noise = sound.audioPlayer("data/noise.wav",True,"noise")
+#wakeup = sound.audioPlayer("data/ok_google.wav",False,"wakeup")
+
+
 # TO DO
 #====================================================#
-# - Test on rpi3 and others (bjørn + tore)
-# - See what can make the code lighter
 # - create play audio module (voices and noise) - (bjørn)
-# - make logic so when predict changes it waits 2 secounds before predict again
+# - Send single frame auido data to client, to make a beautiful vizz 
+# - Create and save a big dataset for background sounds.
+# - Load in the dataset in beinning of sketch (when above is done)
 
 # Functions
 #====================================================#
@@ -30,23 +35,29 @@ def test_message(message):
     msg = message['data']
     global TRAIN
     global PREDICT
-
-    # make sure the spectogram is full before resiving commands
-    if (globals.SPECTOGRAM_FULL):
+        
+    PREDICT = False
+    #noise.stop()
+    #wakeup.stop()
+    if('class0' in msg and globals.EXAMPLE_READY):
+        example = sound.get_spectrogram()
+        ai.addExample(example,0)
+        globals.BG_EXAMPLES += 1
+        LED.listen()
+    elif('class1' in msg and globals.EXAMPLE_READY and not globals.UPDATE_BG_DATA):
+        example = sound.get_spectrogram()
+        ai.addExample(example,1)
+        globals.TR_EXAMPLES += 1
+        LED.listen()
+    elif('train' in msg):
         PREDICT = False
-        if('class0' in msg):
-            example = sound.get_spectrogram()
-            ai.addExample(example,0)
-            globals.BG_EXAMPLES += 1
-            LED.listen()
-        elif('class1' in msg and globals.SILENCE):
-            example = sound.get_spectrogram()
-            ai.addExample(example,1)
-            globals.TR_EXAMPLES += 1
-            LED.listen()
-        elif('train' in msg):
-            PREDICT = False
-            TRAIN = True
+        TRAIN = True
+    elif('reset' in msg):
+        print("reset model")
+        ai.reset_model()
+        globals.TR_EXAMPLES = 0
+        PREDICT = True
+
 
 # Main thread
 def main_thread():
@@ -55,54 +66,64 @@ def main_thread():
     global RESULT
 
     # setup keras model
-    ai.create_model()
+    PREDICT = ai.create_model()
+    print(PREDICT)
 
-    #noise = sound.audioPlayer("data/noise.wav");
-    #wakeup = sound.audioPlayer("data/noise.wav");
+    # Start the sound threads
+    #noise.start()
+    #wakeup.start()
 
-    trigger = False
-    trigger_timer = False
+    triggered = False
     prev_timer = 0;
-    interval = 1;
+    interval = 3;
 
-
+    # Program loop 
     while stream.is_active():
-        time.sleep(0.02)
+        time.sleep(0.03)
         LED.off()
-        current_sec = time.time() % 60
+        current_sec = time.time()
 
-        if(globals.SILENCE): # when TRUE do the magic!
+        # If the mic is triggered an spectogram is not done, make a row more. 
+        if(globals.MIC_TRIGGER and not globals.SPECTOGRAM_FULL):    
             sound.make_spectrogram();
         else:
-            globals.RESULT = 0
+             globals.RESULT = 0 # if silence just return 0 
 
-        if TRAIN and globals.SPECTOGRAM_FULL:
+        # If the train button is hit, and there are more than 2 example go train
+        if TRAIN:
+            ai.labels_to_model = np.array(ai.TRAINING_LABELS)
+            ai.data_to_model = np.array(ai.TRAINING_DATA)
+            print(ai.labels_to_model.shape)
+            print(ai.data_to_model.shape)
             ai.train_model()
             TRAIN = False
             PREDICT = True
 
-        elif PREDICT and globals.SPECTOGRAM_FULL and globals.SILENCE:
+        # If train is done, and a new finished frame is ready, go predict it. 
+        elif PREDICT and globals.EXAMPLE_READY:
             sample = sound.get_spectrogram()
-            globals.RESULT = ai.predict(sample)
+            globals.RESULT = ai.predict(sample).item()
 
-            if(globals.RESULT == 0 and trigger == False):
-                trigger = True
-            elif(globals.RESULT == 1 and trigger == True):
-                print("stop noise")
-                print("play wakeword")
+            if globals.RESULT  == 1:
+                #noise.stop()
+                #wakeup.play()
                 LED.on()
-                prev_timer = current_sec
-                trigger_timer = True
-                trigger = False
-
-        if(trigger_timer):
-            if(current_sec - prev_timer < 3):
+                print("stop noise")
+                print("play wake word")
+                triggered = True
                 PREDICT = False
-            else:
-                print("stop wakeword")
-                print("srart noise")
+                prev_timer = current_sec
+
+        else:
+            globals.RESULT = 0
+
+
+        if current_sec - prev_timer > interval:
+            if triggered:
+                #noise.play()
+                print("start noise")
                 LED.off()
-                trigger_timer = False
+                triggered = False;
                 PREDICT = True
 
 # Setup
