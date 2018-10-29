@@ -23,16 +23,20 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR) # remove socket io logs
 
 # this thread is running in the background sending data to the client when connected
 def response_thread():
-     while True:
-     #if globals.SPECTOGRAM_FULL:
-        socketio.sleep(0.05) #speed of data transmit
-        spec_as_list = sound.get_spectrogram_spec().tolist() # convert from numpy to regular list
-        spec_to_server = json.dumps(spec_as_list, indent=4) # convert list to json format
-        socketio.emit('response', {'spectogram': spec_to_server,
-                                    'result': globals.RESULT,
-                                    'bg_examples': globals.BG_EXAMPLES,
-                                    'tr_examples': globals.TR_EXAMPLES},namespace='/socket')
-            
+    print("nothing")
+     #while True:
+
+def send_spectogram(data):
+    spec_as_list = data.tolist() # convert from numpy to regular list
+    spec_to_server = json.dumps(spec_as_list) # convert list to json format
+    socketio.emit('sound', {'spectogram': spec_to_server},namespace='/socket')
+
+def send_response():
+    socketio.emit('response',{'result': globals.RESULT,
+                    'bg_examples': globals.BG_EXAMPLES,
+                    'tr_examples': globals.TR_EXAMPLES,
+                    },namespace='/socket')
+                                     
 @app.route('/')
 def index():
     print('Someone Connected!')

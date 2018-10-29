@@ -70,14 +70,13 @@ def create_model():
 # add examples to training dataset
 def addExample(sample, label):
     global TRAINING_DATA, TRAINING_LABELS
-
     encoded_y = keras.utils.np_utils.to_categorical(label,num_classes=NUM_CLASSES) # make one-hot
     encoded_y = np.reshape(encoded_y,(1,2))
     TRAINING_LABELS = np.append(TRAINING_LABELS,encoded_y,axis=0)
     sample = np.expand_dims(sample, axis=0)
     sample = np.expand_dims(sample, axis=0)
     TRAINING_DATA = np.append(TRAINING_DATA,sample,axis=0)
-
+    globals.PREDICT = True
     print('add example for label %d'%label)
 
 # Train the model on recorded examples

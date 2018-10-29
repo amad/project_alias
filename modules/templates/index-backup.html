@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/style/style.css">
+    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/js/socket.io.js"></script>
+
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Start of app -->
+    <div class="header">
+      <div class="wrapper">
+        <h1>Alias</h1>
+        <h2>info</h2>
+      </div>
+      <p id="device">Google Home</p>
+    </div>
+
+    <div class="main-content">
+      <p>Record a new self-chosen wake-word 5 times to train Alias</p>
+
+      <div class="viz-wrapper">
+        <div class="abs-wrapper">
+         <button class="toggle viz-content" id="class1">Record wake-word</button>
+        </div>
+        <div class="abs-wrapper">
+         <canvas class="viz-content" id="canvas"> spectogram </canvas>
+        </div>
+      </div>
+
+      <p id="result">Prediction:</p>
+      <p id="bg_examples">Background Examples:</p>
+      <p id="tr_examples">Trigger Examples:</p>
+     
+      <div class="slidecontainer">
+        <input type="range" min="0.0" max="10.0" value="2.0" step="0.1" class="slider" id="myRange">
+      </div>
+    </div>
+
+      <div class="menu">
+        <div class="icon-wrapper">
+          <img src="/static/assets/settings.svg">
+        </div>
+        <button class="toggle" id="class0">eadd class 0</button>
+        <button id="train">train</button>
+      </div>
+
+  <!-- End of app -->
+  </div>
+
+  <!-- Javascript -->
+  <script type="text/javascript" src="/static/js/interaction.js" charset="utf-8"></script>
+  <script type="text/javascript" src="/static/js/visualization.js" charset="utf-8"></script>
+  <script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/socket');
+
+    $(document).ready(function(){
+      // Get data from python
+      socket.on('response', function(msg) {
+        console.log(msg)
+        var spectogram = $.parseJSON(msg.spectogram);
+        drawSpectogram(spectogram);
+        $('#result').text(msg.result);
+        $('#bg_examples').text(msg.bg_examples);
+        $('#tr_examples').text(msg.tr_examples);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,107 +1,94 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.slim.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" type="text/css" href="../static/style/style.css">
+    <script type="text/javascript" src="../static/js/jquery.min.js"></script>
+    <script type="text/javascript" src="../static/js/socket.io.js"></script>
 
 </head>
-<body>
-  <button class="toggle" id="class0">add class 0</button>
-  <br>
-  <button class="toggle" id="class1">add class 1</button>
-  <br>
-  <button id="train">train</button>
-  <br>
-  <br>
-  <button id="reset">reset</button>
-  <br>
-  <span>Prediction: </span><span id="result"></span>
-  <br>
-  <span>Background Examples: </span><span id="bg_examples"></span>
-  <br>
-  <span>Trigger Examples: </span><span id="tr_examples"></span>
-  <br>
-  <canvas id="canvas" width="256" height="256"> spectogram </canvas>
+<body oncontextmenu="return false">
+  <div class="app-wrapper">
+    <!-- Start of app -->
+    <div class="header">
+        <h1>Project<br>Alias</h1>
+        <div>
+          <p class="meta-info">Prediction: <span id="result">0</span></p>
+          <p class="meta-info">Background Examples: <span id="bg_examples">0</span></p>
+        </div>
+    </div>
 
-  <div class="slidecontainer">
-   <input type="range" min="0.0" max="10.0" value="2.0" step="0.1" class="slider" id="myRange">
-</div>
+    <div class="main-content">
+      
+        <div class="viz-wrapper">
+
+          <div class="abs-wrapper example-info">
+            <div class="record-info">
+              <h2 id="tr_examples">0</h2>
+              <p style="margin: 0; color:#EEEEEE; opacity: 0.3">examples</p>
+            </div>
+          </div>
+
+        <div class="abs-wrapper">
+          <canvas class="viz-content" id="canvas"> spectogram </canvas>
+        </div>
+
+      </div>
+  
+      <div class="record-wrapper">
+        <div class="vertical-align-wrapper">
+          <div class="round">
+            <button class="toggle round" id="class1"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu">
+        <div class="icon-wrapper">
+          <img class="vertical-align-wrapper" src="../static/assets/settings.svg">
+        </div>
+        <button class="toggle" id="class0">eadd class 0</button>
+        <button id="train">train</button>
+        <button id="reset">reset</button>
+      </div>
+    </div>
+
+    
+
+  <!-- End of app -->
+  </div>
 
   <!-- Javascript -->
-  <script type="text/javascript" charset="utf-8">
-    var normalizer = 2;
-    var slider = document.getElementById("myRange");
-    slider.oninput = function() {
-      normalizer = this.value;
-      console.log(normalizer);
-    }
+  <script type="text/javascript" src="../static/js/interaction.js" charset="utf-8"></script>
+  <script type="text/javascript" src="../static/js/visualization.js" charset="utf-8"></script>
+  <script type="text/javascript" charset="utf-8">       
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/socket');
     $(document).ready(function(){
-      var socket = io.connect('http://' + document.domain + ':' + location.port + '/socket');
 
       // Get data from python
-      socket.on('response', function(msg) {
-        console.log(msg)
+      socket.on('sound', function(msg) {  
         var spectogram = $.parseJSON(msg.spectogram);
         drawSpectogram(spectogram);
+      });
+
+      socket.on('response', function(msg) {
+        console.log(msg);
         $('#result').text(msg.result);
         $('#bg_examples').text(msg.bg_examples);
         $('#tr_examples').text(msg.tr_examples);
       });
 
-      var timeOut;
-      // Toggle mechanic
-      $(".toggle").mousedown(function(){
-        var msg = $(this).attr('id');
-        timeOut=setInterval(function() {
-           socket.emit('msgEvent', {data: msg});
-        }, 100);
-      })
+      button_interaction();
+      menu_interaction()
 
-      $(".toggle").mouseup(function(){
-        clearInterval(timeOut)
-      })
-
-      //train btn
-      $("#train").mousedown(function(){
-        socket.emit('msgEvent',{data:"train"});
-      })
-      $("#reset").mousedown(function(){
-        socket.emit('msgEvent',{data:"reset"});
-      })
-
-
-
-
+      $('body').disableSelection();
     });
 
-    /////////////////////////////////////////////////////
-    // SPECTOGRAM
-    var canvas = document.getElementById('canvas');
-    var ctx = canvas.getContext("2d");
-
-    var resolution = 40;
-    var xRes = canvas.width / resolution;
-    var yRes = canvas.height / resolution;
-
-    function drawSpectogram(data){
-      //Draw the spectrogram
-      for (var x = 0; x < data.length-1; x++) {
-        for (var y = data[0].length-1; y > 0; y--) {
-
-          var value = Math.floor(data[x][y]);
-          var hue = 140 //+(Math.abs(value)/6);
-          var bri = value / normalizer;
-          ctx.fillStyle = 'hsl('+ hue +',100%,'+bri+'%)';
-          ctx.fillRect(xRes * x, yRes * y, xRes, yRes);
-        }
-      }
+    //prevent scroll on phone
+    document.ontouchmove = function(event){
+      event.preventDefault();
     }
-
-    function mapRange (value, a, b, c, d) {
-      value = (value - a) / (b - a);
-      return c + value * (d - c);
-    }
-
   </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 import numpy as np
 from modules import globals
+from modules import connection
 
 # Audio
 import os
@@ -7,6 +8,10 @@ import pyaudio
 import wave
 import time
 import threading
+import traceback
+import pygame.mixer 
+pygame.mixer.init()
+
 
 # Audio settings
 #====================================================#
@@ -34,18 +39,17 @@ def audio_callback(in_data, frame_count, time_info, flag):
     audio_data = np.fromstring(in_data, dtype=np.int16)
     mic_thresh(audio_data)
     FRAME = audio_data #store the new chunk in global array.
+
     return None, pyaudio.paContinue
 
 
 # Make threshold for microphone
-prev_sec = 0
 def mic_thresh(volume):
-    global prev_sec
+    global prev_sec, count
     current_sec = time.time()
     if(np.max(volume) > 5500):
         globals.MIC_TRIGGER = True
         prev_sec  = current_sec
-
 
 # Callback on mic input
 pre_emphasis = 0.97
@@ -79,19 +83,24 @@ def create_mfcc(data):
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
     return filter_banks
 
-
 # Update spectogram and toogle when ready 
+count = 0; 
 def make_spectrogram():
-    global RUNNING_SPECTOGRAM
-    global FINISHED_SPECTOGRAM
+    global RUNNING_SPECTOGRAM, FINISHED_SPECTOGRAM, count
+
     new_array = (create_mfcc(FRAME));
     RUNNING_SPECTOGRAM = np.vstack([new_array,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
+    connection.send_spectogram(new_array)
+    print("count: %d" %count)
     if(len(RUNNING_SPECTOGRAM) > SPECTOGRAM_LEN): #see if array is full
         FINISHED_SPECTOGRAM = RUNNING_SPECTOGRAM
         RUNNING_SPECTOGRAM= np.empty([1,FRAMES_RANGE], dtype=np.int16)  #remove the oldes chunk
-        globals.SPECTOGRAM_FULL = True 
         globals.EXAMPLE_READY = True  
-        globals.MIC_TRIGGER = False         
+        globals.MIC_TRIGGER = False
+        count = 0
+    else:
+        globals.EXAMPLE_READY = False
+        count += 1
 
 # Updates and returns the finished spectogram
 def get_spectrogram():
@@ -99,64 +108,30 @@ def get_spectrogram():
     globals.EXAMPLE_READY = False
     return FINISHED_SPECTOGRAM
 
-# Update and returns the live stream 
-def get_spectrogram_spec():
-    global RUNNING_SPECTOGRAM
-    globals.SPECTOGRAM_FULL = False
-    return RUNNING_SPECTOGRAM
-
-
-
-
-
 # Audio player class
 #====================================================#
-
-class audioPlayer(threading.Thread) :
-    CHUNK = 1024
-
-    def __init__(self,filepath,loop,name) :
+class audioPlayer():
+    def __init__(self,filepath, loop, name, canPlay):
         super(audioPlayer, self).__init__()
         self.filepath = os.path.abspath(filepath)
         self.loop = loop
         self.name = name
-        self.canPlay = loop
-    
-    def run(self):
-
-        # Open Wave File and start play!
-        print("try to play" + self.filepath)
-        wf = wave.open(self.filepath, 'rb')
-        player = pyaudio.PyAudio()
-        # Open Output Stream (basen on PyAudio tutorial)
-        stream = player.open(format = player.get_format_from_width(wf.getsampwidth()),
-            channels = wf.getnchannels(),
-            rate = wf.getframerate(),
-            output = True)
-
-        while True:
-            def play_stream():
-                data = wf.readframes(self.CHUNK)
-                while len(data) > 0 and self.canPlay:
-                    stream.write(data)
-                    data = wf.readframes(self.CHUNK)
-                    if len(data) <= 0:
-                        print("done")
-                        wf.rewind()
-                        if self.loop:
-                            play_stream()
-
-            play_stream()
-
-        stream.close()
-        player.terminate()
+        self.canPlay = canPlay
+        self.player = pygame.mixer.Sound(file=self.filepath)
 
     def play(self):
-        print("play " + self.name)
-        self.canPlay = True
+        print("playing " + self.name)
+        self.player.play(loops=self.loop)
 
     def stop(self):
-        print("stop " + self.name)
-        self.canPlay = False
+        print("stopping " + self.name)
+        self.player.stop()
+
+
+
+
+
+
+
 
 
