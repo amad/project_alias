@@ -61,10 +61,10 @@ def create_mfcc(data):
     frames = frames*np.hamming(len(data))
     mag_frames = np.absolute(np.fft.rfft(frames, NFFT))  # Magnitude of the FFT
     pow_frames = ((1.0 / NFFT) * ((mag_frames) ** 2))  # Power Spectrum
-    low_freq_mel = 100
-    high_freq_mel = (8000 * np.log10(1 + (RATE / 2) / 700))  # Convert Hz to Mel
+    low_freq_mel = 0
+    high_freq_mel = (2595 * np.log10(1 + (RATE / 2) / 700))  # Convert Hz to Mel
     mel_points = np.linspace(low_freq_mel, high_freq_mel, nfilt + 2)  # Equally spaced in Mel scale
-    hz_points = (700 * (10**(mel_points / 8000) - 1))  # Convert Mel to Hz
+    hz_points = (700 * (10**(mel_points / 2595) - 1))  # Convert Mel to Hz
     bin = np.floor((NFFT + 1) * hz_points / RATE)
 
     fbank = np.zeros((nfilt, int(np.floor(NFFT / 2 + 1))))
@@ -81,6 +81,7 @@ def create_mfcc(data):
     filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Numerical Stability
     filter_banks = 20 * np.log10(filter_banks)  # dB
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
+    #filter_banks = np.abs(filter_banks);
     return filter_banks
 
 # Update spectogram and toogle when ready 
@@ -91,7 +92,7 @@ def make_spectrogram():
     new_array = (create_mfcc(FRAME));
     RUNNING_SPECTOGRAM = np.vstack([new_array,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
     connection.send_spectogram(new_array)
-    print("count: %d" %count)
+    #print("count: %d" %count)
     if(len(RUNNING_SPECTOGRAM) > SPECTOGRAM_LEN): #see if array is full
         FINISHED_SPECTOGRAM = RUNNING_SPECTOGRAM
         RUNNING_SPECTOGRAM= np.empty([1,FRAMES_RANGE], dtype=np.int16)  #remove the oldes chunk

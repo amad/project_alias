@@ -27,7 +27,7 @@ wakeup = sound.audioPlayer("data/ok_google.wav",0,"wakeup", False)
 #====================================================#
 @connection.socketio.on('msgEvent', namespace='/socket')
 def test_message(message):
-    msg = message['data']  
+    msg = message['data']
     globals.PREDICT = False
 
     #Add example to class 0 - Silence / background noise
@@ -50,11 +50,14 @@ def test_message(message):
     elif('train' in msg):
         globals.PREDICT = False
         globals.TRAIN = True
+        connection.send_response()  
 
     #Receive reset command 
     elif('reset' in msg):
-        print("reset model")
+        globals.RESET = True;   
+        connection.send_response()  
         ai.reset_model()
+        globals.RESET = False; 
         globals.TR_EXAMPLES = 0
         globals.PREDICT = True
         connection.send_response()
@@ -102,9 +105,9 @@ def main_thread():
             print(ai.labels_to_model.shape)
             print(ai.data_to_model.shape)
             ai.train_model()
-            connection.socketio.emit('response', {'train': False},namespace='/socket')
             globals.TRAIN = False
             globals.PREDICT = True
+            connection.send_response()  
 
         # If train is done, and a new finished frame is ready, go predict it. 
         elif globals.PREDICT and globals.EXAMPLE_READY:
