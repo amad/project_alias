@@ -62,6 +62,11 @@ def test_message(message):
         globals.PREDICT = True
         connection.send_response()
 
+    #Send system info    
+    elif('get-info' in msg):
+        globals.PREDICT = True
+        connection.send_response();
+
     #Receive is Button is pressed or released
     if('btn_release' in msg):
         globals.BUTTON_PRESSED = False
