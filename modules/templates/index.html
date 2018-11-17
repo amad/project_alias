@@ -1,94 +1,82 @@
-<!DOCTYPE HTML>
-<html>
-<head>
+<!DOCTYPE html>
+<html lang="">
+  <head>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <link rel="stylesheet" type="text/css" href="../static/style/style.css">
+    <title>PROJECT ALIAS</title>
+    <script type="text/javascript" src="../static/js/p5.min.js"></script>
     <script type="text/javascript" src="../static/js/jquery.min.js"></script>
     <script type="text/javascript" src="../static/js/socket.io.js"></script>
+  </head>
+  <body oncontextmenu="false">
+    <div class="app-wrapper">
 
-</head>
-<body oncontextmenu="return false">
-  <div class="app-wrapper">
-    <!-- Start of app -->
-    <div class="header">
-        <h1>Project<br>Alias</h1>
-        <div>
-          <p class="meta-info">Prediction: <span id="result">0</span></p>
-          <p class="meta-info">Background Examples: <span id="bg_examples">0</span></p>
-        </div>
-    </div>
-
-    <div class="main-content">
-      
-        <div class="viz-wrapper">
-
-          <div class="abs-wrapper example-info">
-            <div class="record-info">
-              <h2 id="tr_examples">0</h2>
-              <p style="margin: 0; color:#EEEEEE; opacity: 0.3">examples</p>
-            </div>
-          </div>
-
-        <div class="abs-wrapper">
-          <canvas class="viz-content" id="canvas"> spectogram </canvas>
-        </div>
-
-      </div>
-  
-      <div class="record-wrapper">
-        <div class="vertical-align-wrapper">
-          <div class="round">
-            <button class="toggle round" id="class1"></button>
-          </div>
-        </div>
+      <!-- start of app -->
+      <div class="header small-section">
+        <h1 id="header-text">Examples <span id="tr_examples">0</span></h1>
       </div>
 
-      <div class="menu">
-        <div class="icon-wrapper">
-          <img class="vertical-align-wrapper" src="../static/assets/settings.svg">
-        </div>
-        <button class="toggle" id="class0">eadd class 0</button>
-        <button id="train">train</button>
-        <button id="reset">reset</button>
+      <div class="visualization" oncontextmenu="false" id="canvas-wrapper">
+        <P>Hold to record<br>your alias</P>
       </div>
-    </div>
 
-    
+      <div class="footer small-section">
+        <div class="menu">
+          <div class="menu-icon"></div>
+          <p id="train" >Train alias</p>
+          <p id="reset" >Reset alias</p>
+          <p>Turn off</p>
+        </div>
+      </div>
+       <!-- end of app -->
 
-  <!-- End of app -->
   </div>
-
-  <!-- Javascript -->
+    <!-- Javascript -->
+  <script type="text/javascript" src="../static/js/visualization.js"></script>
   <script type="text/javascript" src="../static/js/interaction.js" charset="utf-8"></script>
-  <script type="text/javascript" src="../static/js/visualization.js" charset="utf-8"></script>
-  <script type="text/javascript" charset="utf-8">       
+  <script type="text/javascript" charset="utf-8"> 
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // GEt data form Raspberry
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/socket');
-    $(document).ready(function(){
+    var spectogram;
+    var examples;
+    var predict = true; 
+    //Get data from python
+    socket.on('sound', function(msg) { 
+      spectogram = $.parseJSON(msg.spectogram);
+      if(predict)receiveData(spectogram);
+    });
 
-      // Get data from python
-      socket.on('sound', function(msg) {  
-        var spectogram = $.parseJSON(msg.spectogram);
-        drawSpectogram(spectogram);
-      });
+    socket.on('response', function(msg) {
+      examples = msg.tr_examples; 
+      predict = msg.predict_state;
 
-      socket.on('response', function(msg) {
-        console.log(msg);
+      if(msg.reset_state) progress_feedback("Reset wake-word");
+        else if(msg.train_state) progress_feedback("Training");
+        else if(msg.predict_state){
+
+          // if system gets ready after loading
+          if(timeOut_progress != null){
+            clearInterval(timeOut_progress);
+            $("#header-text").html("Examples <span id='tr_examples'></span>");
+            clickMenu();
+            timeOut_progress = null
+            if(examples == 0) resetVisualizations(); 
+          }
+       }
+        //Update values when data is coming from RPI 
         $('#result').text(msg.result);
         $('#bg_examples').text(msg.bg_examples);
-        $('#tr_examples').text(msg.tr_examples);
-      });
-
-      button_interaction();
-      menu_interaction()
-
-      $('body').disableSelection();
+        $('#tr_examples').text(examples);
     });
 
     //prevent scroll on phone
-    document.ontouchmove = function(event){
-      event.preventDefault();
-    }
+    function preventBehavior(e) {
+      e.preventDefault(); 
+    };
+    document.addEventListener("touchmove", preventBehavior, {passive: false});
   </script>
-</body>
+  </body>
 </html>
