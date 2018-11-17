@@ -116,14 +116,9 @@
         strokeWeight(4);
         if(this.active){
           this.opacity = 255;
-          this.col = 0; 
         }
         else{
           if(this.opacity > 0) this.opacity -= 50; 
-          else if (count == 0){
-            this.col = 255; 
-            this.opacity = 255; 
-         }
        }
         fill(this.col,this.opacity);
         stroke(0);
