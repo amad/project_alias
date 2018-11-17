@@ -36,7 +36,7 @@ def send_response():
                     'bg_examples': globals.BG_EXAMPLES,
                     'tr_examples': globals.TR_EXAMPLES,
                     },namespace='/socket')
-                                     
+
 @app.route('/')
 def index():
     print('Someone Connected!')

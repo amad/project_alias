@@ -11,5 +11,5 @@ def initialize():
     SPECTOGRAM_FULL_FFT = False
     MIC_TRIGGER = False
     EXAMPLE_READY = False
-    UPDATE_BG_DATA = False # Set true to record new examples to background data set 
+    UPDATE_BG_DATA = False # Set true to record new examples to background data set
     BUTTON_PRESSED = False

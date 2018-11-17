@@ -13,12 +13,10 @@ Project Alias is a open-source parasite to train custom wake-up names for smart 
 
 # Requirements
 
-- Raspberry Pi zero W
-- ReSpkeaker hat
+- [Raspberry Pi A+](https://www.raspberrypi.org/products/raspberry-pi-3-model-a-plus/)
+- [ReSpkeaker hat](http://wiki.seeedstudio.com/ReSpeaker_2_Mics_Pi_HAT/)
 - Tiny speakers
 
-
-*NOTE: for best results use...*
  
 # Setup 🔧
 How to prepare and setup a raspberry pi zero for this project. 
@@ -33,7 +31,7 @@ How to prepare and setup a raspberry pi zero for this project.
 
 5. Update the pi: ```sudo apt-get update && sudo apt-get upgrade```<br>
 
-6. Install **nodejs** : ```sudo apt-get install nodejs npm git-core```<br>
+6. Install **git** and **pip3**: ```sudo apt-get install git-core python3-pip```<br>
 
 7. Reboot ```sudo reboot```
 
@@ -43,6 +41,8 @@ How to prepare and setup a raspberry pi zero for this project.
 
 # Installing 
 
+
+
 Clone and install the sound driver for the [ReSpeaker](http://wiki.seeedstudio.com/ReSpeaker_2_Mics_Pi_HAT/) hat and reboot.<br>
 *This is only required when using the ReSpeaker hat, this code will also work with other sound drivers.*
 
@@ -51,10 +51,30 @@ cd && git clone https://github.com/respeaker/seeed-voicecard.git
 cd seeed-voicecard && sudo ./install.sh
 ```
 
-Install the **Alias** project: 
+Install [Tenserflow](https://github.com/samjabrahams/tensorflow-on-raspberry-pi): 
 
 ```
-npm i project_alias
+sudo apt install libatlas-base-dev
+pip3 install tensorflow
+```
+Install [Keras](https://keras.io/):
+
+```
+sudo apt-get install python3-h5py
+sudo pip3 install tensorflow keras 
+```
+
+Install dependensies: 
+
+```
+sudo apt-get install portaudio19-dev python3-pygame
+sudo pip3 install flask flask_socketio pyaudio spidev
+```
+
+Clone the **Alias** project: 
+
+```
+git c url here
 ```
 
 Setup a bootscript. Open this file:
@@ -62,6 +82,7 @@ Setup a bootscript. Open this file:
 ```
 sudo nano /etc/rc.local
 ```
+Add "cd project_alias && python3 sound-classifier.py &"
 
 # Use Alias 🍄
 

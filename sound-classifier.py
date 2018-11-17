@@ -14,20 +14,20 @@ import atexit
 LED = led.Pixels()
 LED.off()
 
-#Initialize the sound objects 
+#Initialize the sound objects
 noise = sound.audioPlayer("data/noise.wav",-1,"noise",True)
 wakeup = sound.audioPlayer("data/ok_google.wav",0,"wakeup", False)
 
 # TO DO
 #====================================================#
-# - Send single frame auido data to client, to make a beautiful vizz 
+# - Send single frame auido data to client, to make a beautiful vizz
 # - Create and save a big dataset for background sounds.
 
 # Functions
 #====================================================#
 @connection.socketio.on('msgEvent', namespace='/socket')
 def test_message(message):
-    msg = message['data']  
+    msg = message['data']
     globals.PREDICT = False
 
     #Add example to class 0 - Silence / background noise
@@ -51,7 +51,7 @@ def test_message(message):
         globals.PREDICT = False
         globals.TRAIN = True
 
-    #Receive reset command 
+    #Receive reset command
     elif('reset' in msg):
         print("reset model")
         ai.reset_model()
@@ -77,14 +77,14 @@ def main_thread():
     noise.play()
 
 
-    # Program loop 
+    # Program loop
     while stream.is_active():
         time.sleep(0.066)
         LED.off()
         current_sec = time.time()
 
-        # If the mic is triggered an spectogram is not done, make a row more. 
-        if(globals.MIC_TRIGGER and not globals.EXAMPLE_READY):    
+        # If the mic is triggered an spectogram is not done, make a row more.
+        if(globals.MIC_TRIGGER and not globals.EXAMPLE_READY):
             sound.make_spectrogram()
         else:
              globals.RESULT = 0 # if silence just return 0
@@ -93,7 +93,7 @@ def main_thread():
         if not globals.BUTTON_PRESSED:
             globals.EXAMPLE_READY = False;
             globals.PREDICT = True
-             
+
 
         # If the train button is hit, and there are more than 2 example go train
         if globals.TRAIN:
@@ -106,7 +106,7 @@ def main_thread():
             globals.TRAIN = False
             globals.PREDICT = True
 
-        # If train is done, and a new finished frame is ready, go predict it. 
+        # If train is done, and a new finished frame is ready, go predict it.
         elif globals.PREDICT and globals.EXAMPLE_READY:
             sample = sound.get_spectrogram()
             globals.RESULT = ai.predict(sample).item()
@@ -160,5 +160,3 @@ def exit_handler():
     stream.close()
     sound.pyaudio.terminate()
 atexit.register(exit_handler)
-
-

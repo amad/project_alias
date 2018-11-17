@@ -32,7 +32,7 @@ RESULT          = None
 LOAD_MODEL      = True
 FILE_PATH       ='data/alias_model.h5'
 
-# Load training examples for class 0 (background sounds) 
+# Load training examples for class 0 (background sounds)
 def load_BG_examples():
     global TRAINING_DATA, TRAINING_LABELS
     TRAINING_DATA = np.load('data/background_sound_examples.npy')
@@ -41,7 +41,7 @@ def load_BG_examples():
     print("- loaded example shape")
     print(TRAINING_DATA.shape)
 
-# Initializing the kreas model 
+# Initializing the kreas model
 def create_model():
     global model
     load_BG_examples()
@@ -62,7 +62,7 @@ def create_model():
         model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])
         return False
 
-    else:    
+    else:
         model = load_model(FILE_PATH)
         print("just loaded model: " + FILE_PATH)
         return True
@@ -108,7 +108,7 @@ def predict(sample):
     prediction = model.predict(sample_extended)
     return np.argmax(prediction)
 
-# Reset the current model to the neutral with no wake-word trained yet. 
+# Reset the current model to the neutral with no wake-word trained yet.
 def reset_model():
     print("")
     print("##########################")
