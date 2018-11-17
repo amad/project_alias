@@ -1,7 +1,8 @@
+    var timeOut;
+    var class_to_train = 'class1'
+    var record_BG = false;
 
   $(document).ready(function(){
-    var timeOut;
-
     //init menu function 
     $(".menu-icon").on('click',clickMenu);
 
@@ -10,7 +11,7 @@
       if(predict){
         recordBtn = true;
         timeOut=setInterval(function() {
-          socket.emit('msgEvent', {data: 'class1'});
+          socket.emit('msgEvent', {data: class_to_train});
         }, 100);
         e.preventDefault(); //prevent native mobile action
       }
@@ -32,7 +33,27 @@
     //Reset btn
     $("#reset").mousedown(function(){
       socket.emit('msgEvent',{data:"reset"});
-    })    
+    })
+
+    function requestInfo(){
+       socket.emit('msgEvent',{data:"get-info"});
+    }   
+
+  
+    //Class to train toogle
+    $("#bg-toggle").mousedown(function(){
+      if(!record_BG){
+        $("#bg-toggle").text("Background sound - ON");
+        record_BG = true;
+        class_to_train = 'class0';
+      }
+      else{
+        $("#bg-toggle").text("Background sound - OFF");
+        record_BG = false;
+        class_to_train = 'class1';
+      }
+      requestInfo();
+    })   
     
     //Prevent selection
     $('body').disableSelection();

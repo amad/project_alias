@@ -45,7 +45,7 @@
         count++;
       }
       else{
-          if(recordBtn){
+          if(recordBtn && !record_BG){
             vis.push(new Visualization());
             vis[vis.length-1].init();
             recordBtn = false;

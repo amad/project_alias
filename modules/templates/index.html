@@ -26,7 +26,8 @@
           <div class="menu-icon"></div>
           <p id="train" >Train alias</p>
           <p id="reset" >Reset alias</p>
-          <p>Turn off</p>
+          <p id="bg-toggle">Background sound - OFF</p>
+          <p id="noise">Turn off</p>
         </div>
       </div>
        <!-- end of app -->
@@ -67,9 +68,10 @@
           }
        }
         //Update values when data is coming from RPI 
+        console.log("predict: " + predict);
         $('#result').text(msg.result);
-        $('#bg_examples').text(msg.bg_examples);
-        $('#tr_examples').text(examples);
+        if(record_BG)$('#tr_examples').text(msg.bg_examples);
+        else $('#tr_examples').text(examples);
     });
 
     //prevent scroll on phone
