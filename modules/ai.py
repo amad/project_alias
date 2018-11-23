@@ -25,11 +25,11 @@ LEARNING_RATE   = 0.0001
 EPOCHS          = 10
 BATCH_SIZE      = 8
 DENSE_UNITS     = 128
-TRAINING_DATA   = np.empty([0,0,0,0]) # XS Example array to be trained
-TRAINING_LABELS = np.empty([0,0]) # YS Label array
+TRAINING_DATA   = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
+TRAINING_LABELS = np.empty([0, 2]) # YS Label array
 RESULT          = None
 
-LOAD_MODEL      = True
+LOAD_MODEL      = False
 FILE_PATH       ='data/alias_model.h5'
 
 # Load training examples for class 0 (background sounds)
@@ -44,11 +44,11 @@ def load_BG_examples():
 # Initializing the kreas model
 def create_model():
     global model
-    load_BG_examples()
+    #load_BG_examples()
 
     if(not LOAD_MODEL):
         model = Sequential()
-        model.add(Conv2D(32, kernel_size = (3,3), input_shape = (1, sound.SPECTOGRAM_LEN+1, sound.FRAMES_RANGE), data_format='channels_first'))
+        model.add(Conv2D(32, kernel_size = (3,3), input_shape = (1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE), data_format='channels_first'))
         model.add(MaxPooling2D(pool_size = (2, 2)))
         model.add(Conv2D(filters = 16, kernel_size = (3,3), activation = 'relu'))
         model.add(MaxPooling2D(pool_size = (2, 2)))
@@ -60,12 +60,14 @@ def create_model():
         model.add(Dropout(rate = 0.5))
         model.add(Dense(units = NUM_CLASSES, activation = 'softmax'))
         model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])
-        return False
+        #return True
+        globals.HAS_BEEN_TRAINED = False
 
     else:
         model = load_model(FILE_PATH)
         print("just loaded model: " + FILE_PATH)
-        return True
+        globals.HAS_BEEN_TRAINED = True
+        #return True
 
 # add examples to training dataset
 def addExample(sample, label):
@@ -76,8 +78,11 @@ def addExample(sample, label):
     sample = np.expand_dims(sample, axis=0)
     sample = np.expand_dims(sample, axis=0)
     TRAINING_DATA = np.append(TRAINING_DATA,sample,axis=0)
-    globals.PREDICT = True
     print('add example for label %d'%label)
+    print(TRAINING_LABELS.shape)
+    print(TRAINING_DATA.shape)
+    if globals.HAS_BEEN_TRAINED:
+        globals.HAS_BEEN_TRAINED = False
 
 # Train the model on recorded examples
 def train_model():
@@ -85,10 +90,11 @@ def train_model():
     model.fit(TRAINING_DATA,
         TRAINING_LABELS,
         epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-        class_weight = {0:1 , 1:30}
+        batch_size=BATCH_SIZE
+        #class_weight = {0:1 , 1:1}
         )
     print("model trained")
+    globals.HAS_BEEN_TRAINED = True
     model.save(FILE_PATH)
     print("saved model")
 
@@ -110,14 +116,16 @@ def predict(sample):
 
 # Reset the current model to the neutral with no wake-word trained yet.
 def reset_model():
-    print("")
-    print("##########################")
-    print("RESETING MODEL")
-    global model
+    global model, TRAINING_LABELS, TRAINING_DATA
     del model
-    print("- deleted model")
-    load_BG_examples()
     K.clear_session()
-    model = load_model("data/neutral_model.h5")
+    print("- deleted model")
+    if LOAD_MODEL:
+        load_BG_examples()
+        model = load_model("data/neutral_model.h5")
+    else:
+        TRAINING_DATA   = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
+        TRAINING_LABELS = np.empty([0, 2]) # YS Label array
+        create_model()
     model._make_predict_function()
     print("- loaded basic model")

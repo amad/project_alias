@@ -19,10 +19,10 @@ CHUNK               = 1024
 FORMAT              = pyaudio.paInt16
 CHANNELS            = 1
 RATE                = 16000
-SPECTOGRAM_LEN      = 33
+SPECTOGRAM_LEN      = 22
 FRAMES_RANGE        = 20 # the same as Y-axe values for convinience
-RUNNING_SPECTOGRAM  = np.empty([1,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
-FINISHED_SPECTOGRAM = np.empty([1,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
+RUNNING_SPECTOGRAM  = np.empty([0,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
+FINISHED_SPECTOGRAM = np.empty([0,FRAMES_RANGE], dtype=np.int16) # array to store thespectogram
 FRAME               = np.empty([CHUNK], dtype=np.int16) # frames to fill up spectogram
 
 def initialize():
@@ -43,15 +43,11 @@ def audio_callback(in_data, frame_count, time_info, flag):
 
     return None, pyaudio.paContinue
 
-
 # Make threshold for microphone
 def mic_thresh(volume):
-    global prev_sec, count
-    current_sec = time.time()
-    if(np.max(volume) > 2000):
+    if(np.max(volume) > 2000 and not globals.MIC_TRIGGER):
         globals.MIC_TRIGGER = True
-        prev_sec  = current_sec
-
+        
 # Callback on mic input
 pre_emphasis = 0.97
 NFFT = 512
@@ -86,23 +82,21 @@ def create_mfcc(data):
     return filter_banks
 
 # Update spectogram and toogle when ready
-count = 0;
-def make_spectrogram():
-    global RUNNING_SPECTOGRAM, FINISHED_SPECTOGRAM, count
 
-    new_array = (create_mfcc(FRAME));
-    RUNNING_SPECTOGRAM = np.vstack([new_array,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
-    connection.send_spectogram(new_array)
-    #print("count: %d" %count)
-    if(len(RUNNING_SPECTOGRAM) > SPECTOGRAM_LEN): #see if array is full
+def make_spectrogram():
+    global RUNNING_SPECTOGRAM, FINISHED_SPECTOGRAM
+
+    if(len(RUNNING_SPECTOGRAM) < SPECTOGRAM_LEN): #see if array is full
+        new_array = (create_mfcc(FRAME));
+        RUNNING_SPECTOGRAM = np.vstack([new_array,RUNNING_SPECTOGRAM]) #Stack the new sound chunk infront in the specrtogram array.
+        connection.send_spectogram(new_array,len(RUNNING_SPECTOGRAM))
+        print(len(RUNNING_SPECTOGRAM))
+
+    else:
         FINISHED_SPECTOGRAM = RUNNING_SPECTOGRAM
-        RUNNING_SPECTOGRAM= np.empty([1,FRAMES_RANGE], dtype=np.int16)  #remove the oldes chunk
+        RUNNING_SPECTOGRAM= np.empty([0,FRAMES_RANGE], dtype=np.int16)  #remove the oldes chunk
         globals.EXAMPLE_READY = True
         globals.MIC_TRIGGER = False
-        count = 0
-    else:
-        globals.EXAMPLE_READY = False
-        count += 1
 
 # Updates and returns the finished spectogram
 def get_spectrogram():

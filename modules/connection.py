@@ -26,20 +26,21 @@ def response_thread():
     print("nothing")
      #while True:
 
-def send_spectogram(data):
-    #print("send specto")
+def send_spectogram(data, row):
     spec_as_list = data.tolist() # convert from numpy to regular list
     spec_to_server = json.dumps(spec_as_list) # convert list to json format
-    #print(data);
-    socketio.emit('sound', {'spectogram': spec_to_server},namespace='/socket')
+    socketio.emit('sound', {'spectogram': spec_to_server,'count': row},namespace='/socket')
 
 def send_response():
-    socketio.emit('response',{'result': globals.RESULT,
-                    'bg_examples': globals.BG_EXAMPLES,
-                    'tr_examples': globals.TR_EXAMPLES,
-                    'train_state': globals.TRAIN,
-                    'predict_state': globals.PREDICT,
-                    'reset_state': globals.RESET
+    socketio.emit('response',{
+                    'result'         : globals.RESULT,
+                    'bg_examples'    : globals.BG_EXAMPLES,
+                    'tr_examples'    : globals.TR_EXAMPLES,
+                    'train_state'    : globals.TRAIN,
+                    'predict_state'  : globals.PREDICT,
+                    'reset_state'    : globals.RESET,
+                    'hasbeentrained' :globals.HAS_BEEN_TRAINED,
+                    'triggered'      :globals.TRIGGERED
                     },namespace='/socket')
 
 @app.route('/')

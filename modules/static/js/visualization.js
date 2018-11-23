@@ -1,13 +1,14 @@
  /////////////////////////////////////////////////////////////
     // Visualization 
     var centerX, centerY;
- 
-    var rowLength = 20;
+    var colLength = 20;
+    var rowLength = 22; 
+    var radius = 100;
     var angle;
     var recordBtn = false;
     var vis = [];
-    var count = 0; 
     var canvas; 
+    var bgCol = 255; 
 
     function setup() {
       var canvasDiv = document.getElementById('canvas-wrapper')
@@ -20,29 +21,43 @@
 
       centerY = height/2;
       centerX = width/2;
-      angle = radians(360/rowLength);
+      angle = radians(360/colLength);
       vis.push(new Visualization());
       vis[0].init();
     }
 
+
+
     function draw(){
-      background(255);
+      background(bgCol);
       for(var i = 0; i < vis.length; i++){
-        if(recordBtn && i == vis.length-1) vis[i].active = true;
-        else vis[i].active = false;  
+        if(recordBtn && i == vis.length-1){
+          vis[i].active = true;
+          vis[i].col = 0;
+        }
+        else if (i == vis.length-1){
+          vis[i].col = bgCol;
+        } 
+        else{
+          vis[i].active = false;     
+        }
         vis[i].drawVisualization();
       }
+
       if(recordBtn){
-        fill(0);
-        rect( round((width-176)/2) , 4 , count*round((176/32)) , 4 ); 
-      }
+        if(rowCount != rowLength){
+          fill(0);
+          //rect( round((width-176)/2) , 4 , rowCount*round((176/rowLength)) , 4 ); 
+          rect( 0 , 0 , rowCount*round((width/rowLength)) , 8 ); 
+        }
+      } 
     } 
 
+
+
     function receiveData(data){
-      console.log("count: " + count);
-      if(count < 32){
+      if(rowCount < rowLength){
         vis[vis.length-1].updateVisualization(data);
-        count++;
       }
       else{
           if(recordBtn && !record_BG){
@@ -51,9 +66,10 @@
             recordBtn = false;
           }
           else vis[vis.length-1].shrink = true; 
-          count = 0; 
       }
     }
+
+
 
     function resetVisualizations(){
       vis = []; 
@@ -62,9 +78,8 @@
     }
 
 
-    function Visualization(){
 
-      var radius = 100;
+    function Visualization(){
       this.x = []; 
       this.y = [];
       this.initX = [];
@@ -74,9 +89,8 @@
       this.active = true;
       this.shrink = false; 
 
-
       this.init = function(){
-        for(var i = 0; i <= rowLength-1; i++){
+        for(var i = 0; i <= colLength-1; i++){
           this.x[i] = cos(angle * i) * radius;
           this.y[i] = sin(angle * i) * radius;
           this.initX[i] = this.x[i];
@@ -85,7 +99,7 @@
       }
 
       this.decreaseVisualization = function(){
-        for(var i = 0; i <= rowLength-1; i++){
+        for(var i = 0; i <= colLength-1; i++){
           var distance = dist(this.x[i], this.y[i], this.initX[i], this.initY[i]);
           var decreaseVal = map(distance,5,50,1,7);
           
@@ -102,7 +116,7 @@
       }
 
       this.updateVisualization = function(data){
-        for(var i = 0; i < rowLength; i++){
+        for(var i = 0; i < colLength; i++){
           var val = abs(data[i])
           if(val < 20) val = 0; 
           val = val/8;
@@ -114,27 +128,29 @@
 
       this.drawVisualization = function(){
         strokeWeight(4);
+        stroke(0);
+
         if(this.active){
           this.opacity = 255;
-        }
-        else{
+        }else{
           if(this.opacity > 0) this.opacity -= 50; 
-       }
+        }
+
         fill(this.col,this.opacity);
-        stroke(0);
         if(this.shrink) this.decreaseVisualization(); 
         
         beginShape();
-        curveVertex(this.x[rowLength-1] + centerX, this.y[rowLength-1] + centerY);
-        for(var i = 0; i <= rowLength-1; i++){
+        curveVertex(this.x[colLength-1] + centerX, this.y[colLength-1] + centerY);
+        for(var i = 0; i <= colLength-1; i++){
           curveVertex(this.x[i] + centerX, this.y[i] + centerY);
-          //ellipse(this.x[i] + centerX, this.y[i] + centerY, 5, 5);
         }
         curveVertex(this.x[0] + centerX, this.y[0] + centerY);
         curveVertex(this.x[1] + centerX, this.y[1] + centerY);
         endShape();
       }
     }
+
+
 
     function compareArray(a,b){
       for (var i = 0; i < a.length; ++i) {

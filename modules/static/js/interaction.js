@@ -1,6 +1,10 @@
     var timeOut;
+    var timeOut_progress = null; 
+
     var class_to_train = 'class1'
     var record_BG = false;
+    var on_State = true;
+    var showMenu = false;
 
   $(document).ready(function(){
     //init menu function 
@@ -8,13 +12,11 @@
 
     // Toggle mechanic for buttons
     $("#canvas-wrapper").on('mousedown touchstart', function(e){
-      if(predict){
         recordBtn = true;
         timeOut=setInterval(function() {
           socket.emit('msgEvent', {data: class_to_train});
         }, 100);
         e.preventDefault(); //prevent native mobile action
-      }
     });
 
     $("#canvas-wrapper").on('mouseup touchend', function(e){
@@ -26,20 +28,29 @@
 
     //train btn
     $("#train").on('click', function(){
-      console.log("train");
-      socket.emit('msgEvent',{data:"train"});
+      if(!resetState) socket.emit('msgEvent',{data:"train"});
     })
 
     //Reset btn
     $("#reset").mousedown(function(){
-      socket.emit('msgEvent',{data:"reset"});
+       if(!trainState) socket.emit('msgEvent',{data:"reset"});
     })
 
-    function requestInfo(){
-       socket.emit('msgEvent',{data:"get-info"});
-    }   
-
-  
+    //Toggle system to be on and off 
+    $("#onoff").mousedown(function(){
+      socket.emit('msgEvent',{data:"onoff"});
+      if(on_State){
+        on_State = false;
+        $("#onoff").text("Turn ON");
+        $("#header-text").text("Inactive");
+      }
+      else{
+        on_State = true;
+        $("#onoff").text("Turn OFF");
+        $("#header-text").html("Examples <span id='tr_examples'></span>");
+      }
+    });
+    
     //Class to train toogle
     $("#bg-toggle").mousedown(function(){
       if(!record_BG){
@@ -54,18 +65,23 @@
       }
       requestInfo();
     })   
+
+    //Ask server to update info
+    function requestInfo(){
+       socket.emit('msgEvent',{data:"get-info"});
+    }   
     
     //Prevent selection
     $('body').disableSelection();
     $("canvas").on('touchstart click', (e)=>{
       e.preventDefault();
     });
+
   });
 
 
-
   //Feedback mechanics on commands (Training and reseting)
-  var timeOut_progress = null; 
+
   function progress_feedback(word){
     $("#header-text").text(word)
     var progress = ".";
@@ -77,25 +93,22 @@
   }
 
   //Menu btn
-  var showMenu = false;
   function clickMenu(){
-    if(predict){
       console.log("clicked");
       if(!showMenu){
         $(".menu").animate({
-          top: '-=300%'
+          top:'20%'
         },700,function(){
           showMenu = true;
         })
       }
     else{
       $(".menu").animate({
-        top: '+=300%'
+        top: '80%'
         },700,function(){
           showMenu = false;
         })
       }
-    }
   }
 
   $.fn.extend({

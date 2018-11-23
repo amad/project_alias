@@ -10,6 +10,7 @@ font-family: 'Work Sans', sans-serif;
 
 @media only screen and (max-width: 600px) {
 	.app-wrapper{
+		position: relative;
 		margin: -8px 0 0 -8px;
 		width:100vw;
 		height:100vh;
@@ -20,6 +21,7 @@ font-family: 'Work Sans', sans-serif;
 
 @media only screen and (min-width: 600px) {
 	.app-wrapper{
+		position: relative;
 		margin: 40px auto;
 		width:320px;
 		height:568px;
@@ -46,17 +48,20 @@ p{
 }
 
 .header{
-	position: relative;
-	margin-top: 25%;
+	position: absolute;
+	top: 8%;
+    z-index: 3;
+    width: 90%;
+    padding: 5%;
 }
 .footer{
-	position: relative;
-	height:20%;
+	position: absolute;
+	height:15%;
 }
 
 .visualization{
-	position: relative;
-	height:60%;
+	position: absolute;
+	height:100%;
 	width: 100%;
 	margin: 0;
 }
@@ -74,13 +79,14 @@ p{
 .menu{
 	background-color: white;
 	position: absolute;
-	height: 330%;
+	height: 80%;
 	width: 100%;
-	top:10%;
+	top:80%;
 }
 
 .menu p{
-	line-height: 77px;
+	line-height: 64px;
+	margin-top: 0px;
 
 }
 
@@ -89,8 +95,7 @@ p{
 }
 
 .menu .menu-icon{
-	position: relative;
-	margin:45px auto 23% auto;
+	margin:15% auto 15% auto;
 	height: 8px;
 	width: 40px;
 	border-top: 4px solid black;

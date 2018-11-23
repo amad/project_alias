@@ -21,16 +21,14 @@
         <P>Hold to record<br>your alias</P>
       </div>
 
-      <div class="footer small-section">
-        <div class="menu">
-          <div class="menu-icon"></div>
+      <div class="menu">
+        <div class="menu-icon"></div>
           <p id="train" >Train alias</p>
           <p id="reset" >Reset alias</p>
           <p id="bg-toggle">Background sound - OFF</p>
-          <p id="noise">Turn off</p>
-        </div>
+          <p id="onoff">Turn OFF</p>
       </div>
-       <!-- end of app -->
+      <!-- end of app -->
 
   </div>
     <!-- Javascript -->
@@ -41,23 +39,41 @@
     //////////////////////////////////////////////////////////////////////////////////////////
     // GEt data form Raspberry
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/socket');
-    var spectogram;
+
+    //Global variables from RPI
+    var rowCount; 
     var examples;
-    var predict = true; 
-    //Get data from python
+    var bgExamples;
+    var predictState; 
+    var trainState;
+    var resetState;
+    var result;
+    var hasBeenTrained; 
+    var triggered;
+
+    //Get spectogram from python
     socket.on('sound', function(msg) { 
-      spectogram = $.parseJSON(msg.spectogram);
-      if(predict)receiveData(spectogram);
+      rowCount = $.parseJSON(msg.count);
+      var spectogram = $.parseJSON(msg.spectogram);
+      receiveData(spectogram);
     });
 
+    //Get system info from RPI 
     socket.on('response', function(msg) {
-      examples = msg.tr_examples; 
-      predict = msg.predict_state;
 
-      if(msg.reset_state) progress_feedback("Reset wake-word");
-        else if(msg.train_state) progress_feedback("Training");
-        else if(msg.predict_state){
+      examples       = msg.tr_examples; 
+      bgExamples     = msg.bg_examples;
+      predictState   = msg.predict_state;
+      trainState     = msg.train_state;
+      resetState     = msg.reset_state;
+      result         = msg.result;
+      hasBeenTrained = msg.hasbeentrained
+      triggered      = msg.triggered
+      console.log("predict: " + predictState);
 
+      if(resetState) progress_feedback("Reset wake-word");
+        else if(trainState) progress_feedback("Training");
+        else if(predictState){
           // if system gets ready after loading
           if(timeOut_progress != null){
             clearInterval(timeOut_progress);
@@ -67,12 +83,42 @@
             if(examples == 0) resetVisualizations(); 
           }
        }
-        //Update values when data is coming from RPI 
-        console.log("predict: " + predict);
-        $('#result').text(msg.result);
-        if(record_BG)$('#tr_examples').text(msg.bg_examples);
+
+      //Update values when data is coming from RPI 
+      $('#result').text(result);
+      if(hasBeenTrained){
+        if(triggered){
+         toogleColors(triggered);
+        }
+        else{ 
+          toogleColors(triggered);
+        }
+      }
+      else{
+        $('#header-text').html("Examples <span id='tr_examples'></span>")
+        if(record_BG) $('#tr_examples').text(bgExamples);
         else $('#tr_examples').text(examples);
+      }
     });
+
+
+
+
+
+
+
+    function toogleColors(toogle){
+      if(toogle){
+        $('#header-text').text("Your assistant is activated")
+        bgCol = color(50, 141, 255);
+        $('.menu').css("background-color", 'rgb(50,141,255)');
+      }
+      else{
+        $('#header-text').text("Say your alias!")
+        bgCol = 255;
+        $('.menu').css("background-color", 'white');
+      }
+    }
 
     //prevent scroll on phone
     function preventBehavior(e) {
