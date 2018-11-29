@@ -26,7 +26,10 @@ wakeup = sound.audioPlayer("data/ok_google.wav",0,"wakeup", False)
 @connection.socketio.on('msgEvent', namespace='/socket')
 def test_message(message):
     msg = message['data']
-    globals.PREDICT = False; #always stop prediction on button command
+    print(msg);
+    print("----------------------")
+
+    globals.PREDICT = False; #always stop prediction on button comman
 
     #Add example to class 0 - Silence / background noise
     if('class0' in msg and globals.EXAMPLE_READY):
@@ -90,7 +93,7 @@ def main_thread():
 
     # variables to control timing between predictions 
     prev_timer = 0;
-    interval = 10;
+    interval = 5;
 
     # Program loop start here 
     #====================================================#

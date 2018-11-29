@@ -12,11 +12,13 @@
 
     // Toggle mechanic for buttons
     $("#canvas-wrapper").on('mousedown touchstart', function(e){
+      if(!triggered){
         recordBtn = true;
         timeOut=setInterval(function() {
           socket.emit('msgEvent', {data: class_to_train});
         }, 100);
         e.preventDefault(); //prevent native mobile action
+      }
     });
 
     $("#canvas-wrapper").on('mouseup touchend', function(e){
@@ -28,12 +30,12 @@
 
     //train btn
     $("#train").on('click', function(){
-      if(!resetState) socket.emit('msgEvent',{data:"train"});
+      if(!resetState && !triggered) socket.emit('msgEvent',{data:"train"});
     })
 
     //Reset btn
     $("#reset").mousedown(function(){
-       if(!trainState) socket.emit('msgEvent',{data:"reset"});
+       if(!trainState && !triggered) socket.emit('msgEvent',{data:"reset"});
     })
 
     //Toggle system to be on and off 

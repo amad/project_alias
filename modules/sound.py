@@ -58,10 +58,10 @@ def create_mfcc(data):
     frames = frames*np.hamming(len(data))
     mag_frames = np.absolute(np.fft.rfft(frames, NFFT))  # Magnitude of the FFT
     pow_frames = ((1.0 / NFFT) * ((mag_frames) ** 2))  # Power Spectrum
-    low_freq_mel = 0
-    high_freq_mel = (2595 * np.log10(1 + (RATE / 2) / 700))  # Convert Hz to Mel
+    low_freq_mel = 100
+    high_freq_mel = (8000 * np.log10(1 + (RATE / 2) / 700))  # Convert Hz to Mel
     mel_points = np.linspace(low_freq_mel, high_freq_mel, nfilt + 2)  # Equally spaced in Mel scale
-    hz_points = (700 * (10**(mel_points / 2595) - 1))  # Convert Mel to Hz
+    hz_points = (700 * (10**(mel_points / 8000) - 1))  # Convert Mel to Hz
     bin = np.floor((NFFT + 1) * hz_points / RATE)
 
     fbank = np.zeros((nfilt, int(np.floor(NFFT / 2 + 1))))

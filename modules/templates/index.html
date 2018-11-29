@@ -61,6 +61,7 @@
     //Get system info from RPI 
     socket.on('response', function(msg) {
 
+      console.log(msg);
       examples       = msg.tr_examples; 
       bgExamples     = msg.bg_examples;
       predictState   = msg.predict_state;
@@ -69,9 +70,9 @@
       result         = msg.result;
       hasBeenTrained = msg.hasbeentrained
       triggered      = msg.triggered
-      console.log("predict: " + predictState);
 
-      if(resetState) progress_feedback("Reset wake-word");
+      
+      if(resetState) progress_feedback("Reset alias");
         else if(trainState) progress_feedback("Training");
         else if(predictState){
           // if system gets ready after loading
@@ -87,12 +88,8 @@
       //Update values when data is coming from RPI 
       $('#result').text(result);
       if(hasBeenTrained){
-        if(triggered){
-         toogleColors(triggered);
-        }
-        else{ 
-          toogleColors(triggered);
-        }
+        if(triggered) toogleColors(triggered);
+        else toogleColors(triggered);
       }
       else{
         $('#header-text').html("Examples <span id='tr_examples'></span>")

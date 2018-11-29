@@ -5,6 +5,7 @@ from modules import sound
 
 # Keras
 import keras
+import tensorflow as tf
 from keras import backend as K
 from keras.layers.core import Dense
 from keras.optimizers import Adam
@@ -25,26 +26,27 @@ LEARNING_RATE   = 0.0001
 EPOCHS          = 10
 BATCH_SIZE      = 8
 DENSE_UNITS     = 128
-TRAINING_DATA   = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
-TRAINING_LABELS = np.empty([0, 2]) # YS Label array
 RESULT          = None
-
 LOAD_MODEL      = False
-FILE_PATH       ='data/alias_model.h5'
+FILE_PATH       ='data/empty_model.h5'
 
 # Load training examples for class 0 (background sounds)
 def load_BG_examples():
     global TRAINING_DATA, TRAINING_LABELS
-    TRAINING_DATA = np.load('data/background_sound_examples.npy')
-    TRAINING_LABELS = np.load('data/background_sound_labels.npy')
+    if LOAD_MODEL:
+        TRAINING_DATA = np.load('data/background_sound_examples.npy')
+        TRAINING_LABELS = np.load('data/background_sound_labels.npy')
+    else:
+        TRAINING_DATA = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
+        TRAINING_LABELS = np.empty([0, 2]) # YS Label array
     globals.BG_EXAMPLES = len(TRAINING_DATA)
+    globals.TR_EXAMPLES = len(TRAINING_DATA)
     print("- loaded example shape")
-    print(TRAINING_DATA.shape)
 
 # Initializing the kreas model
 def create_model():
     global model
-    #load_BG_examples()
+    load_BG_examples()
 
     if(not LOAD_MODEL):
         model = Sequential()
@@ -59,15 +61,14 @@ def create_model():
         model.add(Dense(units = DENSE_UNITS, activation = 'relu'))
         model.add(Dropout(rate = 0.5))
         model.add(Dense(units = NUM_CLASSES, activation = 'softmax'))
-        model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])
-        #return True
+        model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])   
+
         globals.HAS_BEEN_TRAINED = False
 
     else:
         model = load_model(FILE_PATH)
         print("just loaded model: " + FILE_PATH)
         globals.HAS_BEEN_TRAINED = True
-        #return True
 
 # add examples to training dataset
 def addExample(sample, label):
@@ -90,13 +91,13 @@ def train_model():
     model.fit(TRAINING_DATA,
         TRAINING_LABELS,
         epochs=EPOCHS,
-        batch_size=BATCH_SIZE
-        #class_weight = {0:1 , 1:1}
+        batch_size=BATCH_SIZE,
+        class_weight = {0:1 , 1:5}
         )
     print("model trained")
     globals.HAS_BEEN_TRAINED = True
-    model.save(FILE_PATH)
-    print("saved model")
+    #model.save(FILE_PATH)
+    #print("saved model")
 
     # When true the background data set can be updated
     if globals.UPDATE_BG_DATA:
@@ -116,16 +117,12 @@ def predict(sample):
 
 # Reset the current model to the neutral with no wake-word trained yet.
 def reset_model():
-    global model, TRAINING_LABELS, TRAINING_DATA
-    del model
+    global model
+    del model 
+    load_BG_examples()
     K.clear_session()
-    print("- deleted model")
-    if LOAD_MODEL:
-        load_BG_examples()
-        model = load_model("data/neutral_model.h5")
-    else:
-        TRAINING_DATA   = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
-        TRAINING_LABELS = np.empty([0, 2]) # YS Label array
-        create_model()
+    model = load_model(FILE_PATH)
     model._make_predict_function()
-    print("- loaded basic model")
+    print("LOADED MODEL")
+    globals.HAS_BEEN_TRAINED = False
+

@@ -60,12 +60,11 @@
         vis[vis.length-1].updateVisualization(data);
       }
       else{
-          if(recordBtn && !record_BG){
-            vis.push(new Visualization());
-            vis[vis.length-1].init();
-            recordBtn = false;
-          }
-          else vis[vis.length-1].shrink = true; 
+        if(recordBtn && !record_BG){
+          vis.push(new Visualization());
+          vis[vis.length-1].init(); 
+        }
+      vis[vis.length-1].shrink = true; 
       }
     }
 
