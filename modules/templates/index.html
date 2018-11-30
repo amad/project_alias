@@ -15,6 +15,7 @@
       <!-- start of app -->
       <div class="header small-section">
         <h1 id="header-text">Examples <span id="tr_examples">0</span></h1>
+        <p class="hidden" id="header-meta" style='margin:8px'>neutral sounds</p>
       </div>
 
       <div class="visualization" oncontextmenu="false" id="canvas-wrapper">
@@ -71,7 +72,7 @@
       hasBeenTrained = msg.hasbeentrained
       triggered      = msg.triggered
 
-      
+      console.log("record btn: " + recordBtn);
       if(resetState) progress_feedback("Reset alias");
         else if(trainState) progress_feedback("Training");
         else if(predictState){
@@ -90,28 +91,28 @@
       if(hasBeenTrained){
         if(triggered) toogleColors(triggered);
         else toogleColors(triggered);
+        $("#header-meta").addClass('hidden')
       }
       else{
         $('#header-text').html("Examples <span id='tr_examples'></span>")
-        if(record_BG) $('#tr_examples').text(bgExamples);
-        else $('#tr_examples').text(examples);
       }
+      if(record_BG) $('#tr_examples').text(bgExamples);
+      else $('#tr_examples').text(examples);
     });
-
-
-
-
 
 
 
     function toogleColors(toogle){
       if(toogle){
         $('#header-text').text("Your assistant is activated")
-        bgCol = color(50, 141, 255);
-        $('.menu').css("background-color", 'rgb(50,141,255)');
+        $('.menu').css("background-color", 'rgb(53, 143, 213)');
+        bgCol = color(53, 143, 213);
       }
       else{
-        $('#header-text').text("Say your alias!")
+        if(predictState) $('#header-text').text("Say your alias!")
+        else{
+          $('#header-text').html("Examples <span id='tr_examples'></span>")
+        }
         bgCol = 255;
         $('.menu').css("background-color", 'white');
       }

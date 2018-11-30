@@ -2,7 +2,6 @@ import numpy as np
 from modules import globals
 from modules import sound
 
-
 # Keras
 import keras
 import tensorflow as tf
@@ -27,10 +26,9 @@ EPOCHS          = 10
 BATCH_SIZE      = 8
 DENSE_UNITS     = 128
 RESULT          = None
-LOAD_MODEL      = False
-FILE_PATH       ='data/empty_model.h5'
+LOAD_MODEL      = True
 
-# Load training examples for class 0 (background sounds)
+# Load or reset training examples for class 0 (background sounds)
 def load_BG_examples():
     global TRAINING_DATA, TRAINING_LABELS
     if LOAD_MODEL:
@@ -40,7 +38,7 @@ def load_BG_examples():
         TRAINING_DATA = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
         TRAINING_LABELS = np.empty([0, 2]) # YS Label array
     globals.BG_EXAMPLES = len(TRAINING_DATA)
-    globals.TR_EXAMPLES = len(TRAINING_DATA)
+    globals.TR_EXAMPLES = 0
     print("- loaded example shape")
 
 # Initializing the kreas model
@@ -66,9 +64,9 @@ def create_model():
         globals.HAS_BEEN_TRAINED = False
 
     else:
-        model = load_model(FILE_PATH)
-        print("just loaded model: " + FILE_PATH)
-        globals.HAS_BEEN_TRAINED = True
+        model = load_model('data/neutral_model.h5') #load the last model saved to continue. 
+        print("just loaded model")
+        globals.HAS_BEEN_TRAINED = False # Change to True if wake word is trained in the loaded model
 
 # add examples to training dataset
 def addExample(sample, label):
@@ -88,16 +86,25 @@ def addExample(sample, label):
 # Train the model on recorded examples
 def train_model():
     global model
+
+    if globals.TR_EXAMPLES > 0:
+        weightRatio = np.ceil(globals.BG_EXAMPLES / globals.TR_EXAMPLES)
+    else:
+        weightRatio = 1
+    print(weightRatio)
+
     model.fit(TRAINING_DATA,
         TRAINING_LABELS,
         epochs=EPOCHS,
         batch_size=BATCH_SIZE,
-        class_weight = {0:1 , 1:5}
+        class_weight = {0:1 , 1:weightRatio}
         )
     print("model trained")
     globals.HAS_BEEN_TRAINED = True
-    #model.save(FILE_PATH)
-    #print("saved model")
+
+    if(LOAD_MODEL):
+        model.save('data/previous_model.h5') # when trained save as the previous model
+        print("saved model")
 
     # When true the background data set can be updated
     if globals.UPDATE_BG_DATA:
@@ -121,7 +128,7 @@ def reset_model():
     del model 
     load_BG_examples()
     K.clear_session()
-    model = load_model(FILE_PATH)
+    model = load_model('data/neutral_model.h5')
     model._make_predict_function()
     print("LOADED MODEL")
     globals.HAS_BEEN_TRAINED = False

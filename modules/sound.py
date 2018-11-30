@@ -15,7 +15,7 @@ pygame.mixer.init()
 
 # Audio settings
 #====================================================#
-CHUNK               = 1024
+CHUNK               = 512
 FORMAT              = pyaudio.paInt16
 CHANNELS            = 1
 RATE                = 16000

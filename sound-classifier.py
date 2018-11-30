@@ -74,7 +74,7 @@ def test_message(message):
         globals.BUTTON_PRESSED = True
 
     #Check if system is ready to predict
-    if(globals.TRAIN or globals.RESET or globals.BUTTON_PRESSED):
+    if(globals.TRAIN or globals.RESET or globals.BUTTON_PRESSED or globals.TRIGGERED):
         globals.PREDICT = False
     else:
         globals.PREDICT = True
@@ -100,7 +100,7 @@ def main_thread():
     while True:
 
         while stream.is_active():
-            time.sleep(0.066)
+            time.sleep(0.033)
             LED.off()
             current_sec = time.time()
 

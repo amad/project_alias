@@ -12,6 +12,7 @@
 
     // Toggle mechanic for buttons
     $("#canvas-wrapper").on('mousedown touchstart', function(e){
+      stopBtnPress()
       if(!triggered){
         recordBtn = true;
         timeOut=setInterval(function() {
@@ -31,15 +32,18 @@
     //train btn
     $("#train").on('click', function(){
       if(!resetState && !triggered) socket.emit('msgEvent',{data:"train"});
+      stopBtnPress();
     })
 
     //Reset btn
     $("#reset").mousedown(function(){
        if(!trainState && !triggered) socket.emit('msgEvent',{data:"reset"});
+       stopBtnPress();
     })
 
     //Toggle system to be on and off 
     $("#onoff").mousedown(function(){
+      stopBtnPress();
       socket.emit('msgEvent',{data:"onoff"});
       if(on_State){
         on_State = false;
@@ -55,23 +59,21 @@
     
     //Class to train toogle
     $("#bg-toggle").mousedown(function(){
+      stopBtnPress();
       if(!record_BG){
         $("#bg-toggle").text("Background sound - ON");
+        $("#header-meta").removeClass('hidden')
         record_BG = true;
         class_to_train = 'class0';
       }
       else{
         $("#bg-toggle").text("Background sound - OFF");
+        $("#header-meta").addClass('hidden')
         record_BG = false;
         class_to_train = 'class1';
       }
       requestInfo();
     })   
-
-    //Ask server to update info
-    function requestInfo(){
-       socket.emit('msgEvent',{data:"get-info"});
-    }   
     
     //Prevent selection
     $('body').disableSelection();
@@ -84,6 +86,16 @@
 
   //Feedback mechanics on commands (Training and reseting)
 
+   //Ask server to update info
+  function requestInfo(){
+    socket.emit('msgEvent',{data:"get-info"});
+  }   
+
+  function stopBtnPress(){
+      clearInterval(timeOut)
+      recordBtn = false;
+  }
+  
   function progress_feedback(word){
     $("#header-text").text(word)
     var progress = ".";

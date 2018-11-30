@@ -17,7 +17,7 @@
       canvas = createCanvas(width, height);
       canvas.parent('canvas-wrapper');
       background(255);
-      frameRate(24);
+      frameRate(30);
 
       centerY = height/2;
       centerX = width/2;
