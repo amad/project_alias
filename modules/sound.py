@@ -26,7 +26,7 @@ FINISHED_SPECTOGRAM = np.empty([0,FRAMES_RANGE], dtype=np.int16) # array to stor
 FRAME               = np.empty([CHUNK], dtype=np.int16) # frames to fill up spectogram
 
 def initialize():
-    os.system('amixer -c 0 set Speaker -37db')
+    os.system('amixer -c 1 sset Speaker 37db-')
     return pyaudio.PyAudio().open(format=FORMAT,
                      channels=CHANNELS,
                      rate=RATE,
