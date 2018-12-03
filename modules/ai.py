@@ -32,8 +32,8 @@ LOAD_MODEL      = True
 def load_BG_examples():
     global TRAINING_DATA, TRAINING_LABELS
     if LOAD_MODEL:
-        TRAINING_DATA = np.load('data/background_sound_examples.npy')
-        TRAINING_LABELS = np.load('data/background_sound_labels.npy')
+        TRAINING_DATA = np.load('data/model/background_sound_examples.npy')
+        TRAINING_LABELS = np.load('data/model/background_sound_labels.npy')
     else:
         TRAINING_DATA = np.empty([0, 1, sound.SPECTOGRAM_LEN, sound.FRAMES_RANGE]) # XS Example array to be trained
         TRAINING_LABELS = np.empty([0, 2]) # YS Label array
@@ -59,12 +59,12 @@ def create_model():
         model.add(Dense(units = DENSE_UNITS, activation = 'relu'))
         model.add(Dropout(rate = 0.5))
         model.add(Dense(units = NUM_CLASSES, activation = 'softmax'))
-        model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])   
+        model.compile(optimizer= 'adam',loss= 'binary_crossentropy',metrics = ['accuracy'])
 
         globals.HAS_BEEN_TRAINED = False
 
     else:
-        model = load_model('data/neutral_model.h5') #load the last model saved to continue. 
+        model = load_model('data/model/neutral_model.h5') #load the last model saved to continue.
         print("just loaded model")
         globals.HAS_BEEN_TRAINED = False # Change to True if wake word is trained in the loaded model
 
@@ -103,15 +103,15 @@ def train_model():
     globals.HAS_BEEN_TRAINED = True
 
     if(LOAD_MODEL):
-        model.save('data/previous_model.h5') # when trained save as the previous model
+        model.save('data/model/previous_model.h5') # when trained save as the previous model
         print("saved model")
 
     # When true the background data set can be updated
     if globals.UPDATE_BG_DATA:
         print(TRAINING_DATA.shape)
-        model.save("data/neutral_model.h5")
-        np.save('data/background_sound_examples.npy',TRAINING_DATA)
-        np.save('data/background_sound_labels.npy',TRAINING_LABELS)
+        model.save("data/model/neutral_model.h5")
+        np.save('data/model/background_sound_examples.npy',TRAINING_DATA)
+        np.save('data/model/background_sound_labels.npy',TRAINING_LABELS)
 
 
 # Predict incoming frames
@@ -125,11 +125,10 @@ def predict(sample):
 # Reset the current model to the neutral with no wake-word trained yet.
 def reset_model():
     global model
-    del model 
+    del model
     load_BG_examples()
     K.clear_session()
-    model = load_model('data/neutral_model.h5')
+    model = load_model('data/model/neutral_model.h5')
     model._make_predict_function()
     print("LOADED MODEL")
     globals.HAS_BEEN_TRAINED = False
-
